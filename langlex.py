@@ -4,24 +4,11 @@ import re
 
 import z3
 
+from classes import Base
+
 log = logging.getLogger(__name__)
 log.setLevel(logging.DEBUG)
 
-def Sub(a, b):
-    return a - b
-
-def Slice(var, start, cnt=1):
-    return (var, start, cnt)
-
-z3_funcs = {'ADD' : z3.Sum,
-            'SUB' : Sub,
-            'UDIV': z3.UDiv,
-            'AND' : z3.And,
-            'OR'  : z3.Or,
-            'NOT' : z3.Not,
-            'ULE' : z3.ULE,
-            'Slice' : Slice
-}
 
 tokens = (
     'NEWLINE',
@@ -31,12 +18,12 @@ tokens = (
     'Z3OPERATOR2',
 
     # these translate to python code
-    'EQ',
-    'NEQ',
-    'GE',
-    'BITOR',
-    'BITAND',
-    'BITNOT',
+    # 'EQ',
+    # 'NEQ',
+    # 'GE',
+    # 'BITOR',
+    # 'BITAND',
+    # 'BITNOT',
 
     'ASSIGNSTART',
     'CONDITIONNAME',
@@ -66,46 +53,46 @@ tokens = (
 )
 
 # Regular expression rules for simple tokens
-def t_EQ(t):
-    r"(EQ|Eq)"
-    log.debug("EQ token")
-    return t
+# def t_EQ(t):
+#     r"(EQ|Eq)"
+#     log.debug("EQ token")
+#     return t
 
-def t_NEQ(t):
-    r"(NEQ|NEq)"
-    log.debug("NEQ token")
-    return t
+# def t_NEQ(t):
+#     r"(NEQ|NEq)"
+#     log.debug("NEQ token")
+#     return t
 
-def t_GE(t):
-    r"(GE|Ge)"
-    log.debug("GE token")
-    return t
+# def t_GE(t):
+#     r"(GE|Ge)"
+#     log.debug("GE token")
+#     return t
 
-def t_BITOR(t):
-    r"(BITOR|BITOr|BitOr)"
-    log.debug("BITOR token")
-    return t
+# def t_BITOR(t):
+#     r"(BITOR|BITOr|BitOr)"
+#     log.debug("BITOR token")
+#     return t
 
-def t_BITAND(t):
-    r"(BITAND|BITAnd|BitAnd)"
-    log.debug("BITAND token")
-    return t
+# def t_BITAND(t):
+#     r"(BITAND|BITAnd|BitAnd)"
+#     log.debug("BITAND token")
+#     return t
 
-def t_BITNOT(t):
-    r"(BITNOT|BITNot|BitNot)"
-    log.debug("BITNOT token")
-    return t
+# def t_BITNOT(t):
+#     r"(BITNOT|BITNot|BitNot)"
+#     log.debug("BITNOT token")
+#     return t
 
 def t_Z3OPERATOR1(t):
     r'(NOT|Not)'
-    t.value = z3_funcs[t.value.upper()]
+    t.value = t.value.upper()
     log.debug("OPERATOR1 token")
     return t
 
 def t_Z3OPERATOR2(t):
-    r"(ADD|SUB|UDIV|AND|OR|ULE|Add|Sub|UDiv|And|Or|ULe)"
+    r"(ADD|SUB|UDIV|AND|OR|ULE|Add|Sub|UDiv|And|Or|ULe|BITAND|BITAnd|BitAnd|BITOR|BITOr|BitOr|GE|Ge|NEQ|NEq|EQ|Eq)"
     log.debug("OPERATOR2 token")
-    t.value = z3_funcs[t.value.upper()]
+    t.value = t.value.upper()
     return t
 
 def t_CHAR(t):

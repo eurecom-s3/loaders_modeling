@@ -4,14 +4,15 @@ import logging
 import coloredlogs
 
 log = logging.getLogger(__name__)
-log.setLevel(logging.DEBUG)
-coloredlogs.install(level='DEBUG', logger=log)
+log.setLevel(10)
+coloredlogs.install(level="INFO", logger=log)
 
 import ply.yacc as yacc
 
 # Get the token map from the lexer.  This is required.
-from langlex import tokens, z3_funcs
-from classes import Variable, Assignment, Expression, Condition
+from langlex import tokens
+from classes import Variable, Assignment, Expression, Condition, Immediate
+from z3_backend import dispatch_z3
 
 import z3
 
@@ -24,29 +25,30 @@ def p_input(p):
 
 def p_input_ass(p):
     'input : assignment_stmt'
-    log.debug("Assignment statement found")
-    print("Assignment", p[1])
+    log.debug("Assignment: " + str(p[1]))
+    p[1].apply()
 
 def p_input_cond(p):
     'input : condition_stmt'
-    log.debug("Condition statement found")
-    print("Condition", p[1])
+    log.debug("Condition " + str(p[1]))
 
 def p_input_input(p):
     'input : input_stmt'
-    log.debug("Input statement found")
-    print("Input", p[1])
+    log.debug("Input" + str(p[1]))
     variables[p[1].name] = p[1]
 
 def p_input_stmt(p):
     'input_stmt : INPUT VARIABLE NUMBER'
     log.debug("Input statement")
-    var = Variable(p[2], p[3])
+    symb = z3.BitVec(p[2], p[3] * 8)
+    var = Variable(p[2], symb)
     p[0] = var
 
 def p_assignment_stmt_uncond(p):
     'assignment_stmt : ASSIGNSTART COLON assignment'
-    p[0] = p[1:]
+    assignment = p[3]
+    assignment.left.symb = assignment.right
+    p[0] = assignment
 
 def p_assignment_stmt_cond(p):
     'assignment_stmt : ASSIGNSTART conditionlist COLON assignment'
@@ -64,6 +66,7 @@ def p_assignment(p):
     'assignment : VARIABLE ARROW expression'
     var = None
     if p[1] not in variables:
+        log.debug(f"New variable found {p[1]}")
         var = Variable(p[1])
         variables[var.name] = var
     else:
@@ -99,111 +102,113 @@ def p_expression_z3operator1(p):
 
 def p_expression_z3operator2(p):
     'expression : Z3OPERATOR2 expression expression'
-    p2 = p[2].expr
-    if isinstance(p2, Variable):
-        p2 = p2.symb
-    p3 = p[3].expr
-    p[0] = Expression(p[1](p2, p3))
+    p2 = p[2]
+    p3 = p[3]
+    p[0] = Expression(dispatch_z3(p[1], p2, p3))
 
-def p_expression_eq(p):
-    'expression : EQ expression expression'
-    p2 = p[2].expr
-    if isinstance(p2, Variable):
-        p2 = p2.symb
-    p3 = p[3].expr
-    p[0] = Expression(p2 == p3)
+# def p_expression_eq(p):
+#     'expression : EQ expression expression'
+#     p2 = p[2].expr
+#     if isinstance(p2, Variable):
+#         p2 = p2.symb
+#     p3 = p[3].expr
+#     p[0] = Expression(p2 == p3)
 
-def p_expression_neq(p):
-    'expression : NEQ expression expression'
-    p2 = p[2].expr
-    if isinstance(p2, Variable):
-        p2 = p2.symb
-    p3 = p[3].expr
-    p[0] = Expression(p2 != p3)
+# def p_expression_neq(p):
+#     'expression : NEQ expression expression'
+#     p2 = p[2].expr
+#     if isinstance(p2, Variable):
+#         p2 = p2.symb
+#     p3 = p[3].expr
+#     p[0] = Expression(p2 != p3)
 
-def p_expression_ge(p):
-    'expression : GE expression expression'
-    p2 = p[2].expr
-    if isinstance(p2, Variable):
-        p2 = p2.symb
-    p3 = p[3].expr
-    p[0] = Expression(p2 >= p3)
+# def p_expression_ge(p):
+#     'expression : GE expression expression'
+#     p2 = p[2].expr
+#     if isinstance(p2, Variable):
+#         p2 = p2.symb
+#     p3 = p[3].expr
+#     p[0] = Expression(p2 >= p3)
 
-def p_expression_bitor(p):
-    'expression : BITOR expression expression'
-    p2 = p[2].expr
-    if isinstance(p2, Variable):
-        p2 = p2.symb
-    p3 = p[3].expr
-    p[0] = Expression(p2 | p3)
+# def p_expression_bitor(p):
+#     'expression : BITOR expression expression'
+#     p2 = p[2].expr
+#     if isinstance(p2, Variable):
+#         p2 = p2.symb
+#     p3 = p[3].expr
+#     p[0] = Expression(p2 | p3)
 
-def p_expression_bitand(p):
-    'expression : BITAND expression expression'
-    p2 = p[2].expr
-    if isinstance(p2, Variable):
-        p2 = p2.symb
-    p3 = p[3].expr
-    p[0] = Expression(p2 & p3)
+# def p_expression_bitand(p):
+#     'expression : BITAND expression expression'
+#     p2 = p[2].expr
+#     if isinstance(p2, Variable):
+#         p2 = p2.symb
+#     p3 = p[3].expr
+#     p[0] = Expression(p2 & p3)
 
-def p_expression_bitnot(p):
-    'expression : BITNOT expression'
-    p2 = p[2].expr
-    if isinstance(p2, Variable):
-        p2 = p2.symb
-    p[0] = Expression(~p2)
+# def p_expression_bitnot(p):
+#     'expression : BITNOT expression'
+#     p2 = p[2].expr
+#     if isinstance(p2, Variable):
+#         p2 = p2.symb
+#     p[0] = Expression(~p2)
 
 def p_expression_parens(p):
     'expression : LPAREN expression RPAREN'
     p[0] = p[2]
 
 def p_expression_slice(p):
-    'expression : expression LBRACKETS NUMBER COMMA NUMBER RBRACKETS'
+    'expression : expression LBRACKETS expression COMMA expression RBRACKETS'
     p1 = p[1].expr
     p3 = p[3]
     p5 = p[5]
-    p[0] = Expression(z3_funcs['Slice'](p1, p3, p5))
+    p[0] = Expression(dispatch_z3('Slice', p1, p3, p5))
 
 def p_expression_indexing(p):
-    'expression : expression LBRACKETS NUMBER RBRACKETS'
+    'expression : expression LBRACKETS expression RBRACKETS'
     p1 = p[1].expr
     p3 = p[3]
-    p[0] = Expression(z3_funcs['Slice'](p1, p3))
+    p[0] = Expression(dispatch_z3('Slice', p1, p3))
 
 def p_expression_variable(p):
     'expression : VARIABLE'
-    print("Found variable", p[1])
+    log.debug("Found variable " + p[1])
     varname = p[1]
     if varname not in variables:
-        log.error("Using variable %s before assignement" % varname)
+        log.critical("Using variable %s before assignement" % varname)
         raise NameError
     p[0] = Expression(variables[varname])
 
 def p_expression_number(p):
     'expression : NUMBER'
-    print("Found NUMBER", p)
-    p[0] = Expression(p[1])
+    log.debug("Found NUMBER " + str(p[1]))
+    p[0] = Immediate(p[1])
 
 def p_expression_string(p):
     'expression : CHAR'
-    p[0] = Expression(p[1])
+    p[0] = Immediate(p[1])
 
 
 # Error rule for syntax errors
 def p_error(p):
     if p is None:
         return
-    print("Syntax error in input! %s" % p)
+    log.error("Syntax error in input! %s" % p)
 
 # Build the parser
 parser = yacc.yacc()
 
+solver = z3.Solver()
+
+cnt = 0
 while True:
     try:
         s = input()
     except EOFError:
         break
+    cnt += 1
     if not s: continue
-    log.info("Line: %s" % s)
+    log.info(f"Line {cnt}: {s}")
     result = parser.parse(s)
     if result:
         print(result)
