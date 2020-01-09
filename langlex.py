@@ -17,14 +17,6 @@ tokens = (
     'Z3OPERATOR1',
     'Z3OPERATOR2',
 
-    # these translate to python code
-    # 'EQ',
-    # 'NEQ',
-    # 'GE',
-    # 'BITOR',
-    # 'BITAND',
-    # 'BITNOT',
-
     'ASSIGNSTART',
     'CONDITIONNAME',
 #    'CONDITION',
@@ -51,37 +43,6 @@ tokens = (
     'VARIABLE',
     'INPUT'
 )
-
-# Regular expression rules for simple tokens
-# def t_EQ(t):
-#     r"(EQ|Eq)"
-#     log.debug("EQ token")
-#     return t
-
-# def t_NEQ(t):
-#     r"(NEQ|NEq)"
-#     log.debug("NEQ token")
-#     return t
-
-# def t_GE(t):
-#     r"(GE|Ge)"
-#     log.debug("GE token")
-#     return t
-
-# def t_BITOR(t):
-#     r"(BITOR|BITOr|BitOr)"
-#     log.debug("BITOR token")
-#     return t
-
-# def t_BITAND(t):
-#     r"(BITAND|BITAnd|BitAnd)"
-#     log.debug("BITAND token")
-#     return t
-
-# def t_BITNOT(t):
-#     r"(BITNOT|BITNot|BitNot)"
-#     log.debug("BITNOT token")
-#     return t
 
 def t_Z3OPERATOR1(t):
     r'(NOT|Not)'

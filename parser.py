@@ -106,53 +106,6 @@ def p_expression_z3operator2(p):
     p3 = p[3]
     p[0] = Expression(dispatch_z3(p[1], p2, p3))
 
-# def p_expression_eq(p):
-#     'expression : EQ expression expression'
-#     p2 = p[2].expr
-#     if isinstance(p2, Variable):
-#         p2 = p2.symb
-#     p3 = p[3].expr
-#     p[0] = Expression(p2 == p3)
-
-# def p_expression_neq(p):
-#     'expression : NEQ expression expression'
-#     p2 = p[2].expr
-#     if isinstance(p2, Variable):
-#         p2 = p2.symb
-#     p3 = p[3].expr
-#     p[0] = Expression(p2 != p3)
-
-# def p_expression_ge(p):
-#     'expression : GE expression expression'
-#     p2 = p[2].expr
-#     if isinstance(p2, Variable):
-#         p2 = p2.symb
-#     p3 = p[3].expr
-#     p[0] = Expression(p2 >= p3)
-
-# def p_expression_bitor(p):
-#     'expression : BITOR expression expression'
-#     p2 = p[2].expr
-#     if isinstance(p2, Variable):
-#         p2 = p2.symb
-#     p3 = p[3].expr
-#     p[0] = Expression(p2 | p3)
-
-# def p_expression_bitand(p):
-#     'expression : BITAND expression expression'
-#     p2 = p[2].expr
-#     if isinstance(p2, Variable):
-#         p2 = p2.symb
-#     p3 = p[3].expr
-#     p[0] = Expression(p2 & p3)
-
-# def p_expression_bitnot(p):
-#     'expression : BITNOT expression'
-#     p2 = p[2].expr
-#     if isinstance(p2, Variable):
-#         p2 = p2.symb
-#     p[0] = Expression(~p2)
-
 def p_expression_parens(p):
     'expression : LPAREN expression RPAREN'
     p[0] = p[2]
