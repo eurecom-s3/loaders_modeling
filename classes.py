@@ -68,28 +68,108 @@ class Variable(Base):
         return size() if callable(size) else size
 
 class Assignment(object):
-    def __init__(self, left, right):
+    def __init__(self, left, right, conditions=list()):
         if not isinstance(left, Variable):
             t = type(left)
             raise TypeError(f"Left operand of an "
                             f"assignment must be a variable. "
                             f"It is {t} instead")
         self.left = left
+
         if not isinstance(right, Expression):
             t = type(right)
             raise TypeError(f"Right operand of an "
                             f"assignment must be an expression. "
                             f"It is {t} instead")
         self.right = right
+
+        if not isinstance(conditions, list):
+            t = type(conditions)
+            raise TypeError(f"Conditions must be a list. "
+                            f"It is {t} instead")
+        if not all(isinstance(Condition, x) for x in conditions):
+            raise TypeError("Conditions must be a list of Condition object")
+        self._conditions = conditions
+
     def __repr__(self):
-        return f"<Assignement {self.left} <- {self.right}>"
+        s = f"<Assignement {self.left} <- {self.right}"
+        if len(self.conditions) != 0:
+            s += f" if {self._conditions}>"
+        return s
+
+    @property
+    def conditions(self):
+        return self._conditions
+    @conditions.setter
+    def conditions(self, new):
+        if not isinstance(new, list):
+            t = type(new)
+            raise TypeError(f"Conditions must be a list. "
+                            f"It is {t} instead")
+        if not all(isinstance(x, Condition) for x in new):
+            raise TypeError("Conditions must be a list of Condition object")
+        self._conditions = new
+    @property
+    def conditional(self):
+        return len(self._conditions) != 0
 
     def apply(self):
-        self.left.symb = self.right.symb
+        if not self.conditional:
+            self.left.symb = self.right.symb
+        else:
+            newexpr = z3.If(z3.And(*[x.model for x in self._conditions]),
+                            self.right.symb, self.left.symb)
+            self.left.symb = newexpr
 
 class Condition(object):
-    def __init__(self, expr, isterminal):
-        if not isinstance(expr, Expression):
+    def __init__(self, expr, isterminal, conditions=list()):
+        if isinstance(expr, Expression):
+            self.expr = expr
+        elif isinstance(expr, bool):
+            self.expr = Expression(z3.BoolVal(expr))
+        else:
             raise TypeError
-        self.expr = expr
         self.isterminal = bool(isterminal)
+
+        if not isinstance(conditions, list):
+            t = type(conditions)
+            raise TypeError(f"Conditions must be a list. "
+                            f"It is {t} instead")
+        if not all(isinstance(x, Condition) for x in conditions):
+            raise TypeError("Conditions must be a list of Condition object")
+        self._conditions = conditions
+
+    @property
+    def conditions(self):
+        return self._conditions
+    @conditions.setter
+    def conditions(self, new):
+        if not isinstance(new, list):
+            t = type(new)
+            raise TypeError(f"Conditions must be a list. "
+                            f"It is {t} instead")
+        if not all(isinstance(x, Condition) for x in new):
+            raise TypeError("Conditions must be a list of Condition object")
+        self._conditions = new
+    @property
+    def conditional(self):
+        return len(self._conditions) != 0
+
+    @property
+    def model(self):
+        if not self.conditional:
+            return self.expr.symb
+
+        if self.isterminal:
+            return z3.If(z3.And(*[x.model for x in self.conditions]),
+                         self.expr.symb,
+                         z3.BoolVal(True))
+        return z3.And(self.expr.symb, *[x.model for x in self.conditions])
+
+    def __repr__(self):
+        s = "<"
+        s += "Terminal " if self.isterminal else ""
+        s += f"Condition {self.expr}"
+        if len(self.conditions) != 0:
+            s += f" if {self._conditions}>"
+        return s

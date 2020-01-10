@@ -26,6 +26,9 @@ def BITAND(a, b):
 def GE(a, b):
     return a >= b
 
+def LE(a, b):
+    return a < b
+
 def Slice(var, start, cnt=1):
     if isinstance(start, z3.BitVecRef):
         zeroext = z3.ZeroExt(var.size() - start.size(), start)
@@ -49,12 +52,13 @@ z3_funcs = {'ADD'   : z3.Sum,
             'EQ'    : EQ,
             'NEQ'   : NEQ,
             'GE'    : GE,
+            'LE'    : LE,
             'BITOR' : BITOR,
             'BITAND': BITAND,
             'Slice' : Slice,
 }
 
-z3_funcs_sized = {'ADD', 'SUB', 'UDIV', 'EQ', 'NEQ', 'GE', 'ULE', 'BITOR', 'BITAND'}
+z3_funcs_sized = {'ADD', 'SUB', 'UDIV', 'EQ', 'NEQ', 'GE', 'LE', 'ULE', 'BITOR', 'BITAND'}
 z3_funcs_bool  = {'OR', 'AND', 'NOT'}
 z3_funcs_unsigned = {'BITOR', 'BITAND', 'ULE'}
 
@@ -94,3 +98,5 @@ def dispatch_z3(func, *args):
         return dispatch_z3_2(func, *args)
     elif len(args) == 3:
         return dispatch_z3_3(func, *args)
+
+dispatch = dispatch_z3

@@ -22,6 +22,7 @@ tokens = (
 #    'CONDITION',
     'COMMA',
     'COLON',
+    'SEMICOLON',
     'TERMINATOR',
 
     # slicing
@@ -51,7 +52,7 @@ def t_Z3OPERATOR1(t):
     return t
 
 def t_Z3OPERATOR2(t):
-    r"(ADD|SUB|UDIV|AND|OR|ULE|Add|Sub|UDiv|And|Or|ULe|BITAND|BITAnd|BitAnd|BITOR|BITOr|BitOr|GE|Ge|NEQ|NEq|EQ|Eq)"
+    r"(ADD|SUB|UDIV|AND|OR|ULE|Add|Sub|UDiv|And|Or|ULe|BITAND|BITAnd|BitAnd|BITOR|BITOr|BitOr|LE|Le|GE|Ge|NEQ|NEq|EQ|Eq)"
     log.debug("OPERATOR2 token")
     t.value = t.value.upper()
     return t
@@ -73,6 +74,7 @@ t_LPAREN     = r'\('
 t_RPAREN     = r'\)'
 t_ARROW      = r'<-'
 t_COLON      = r':'
+t_SEMICOLON      = r';'
 t_COMMA      = r','
 t_NEWLINE    = r'\n'
 

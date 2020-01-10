@@ -5,19 +5,20 @@ import coloredlogs
 
 log = logging.getLogger(__name__)
 log.setLevel(10)
-coloredlogs.install(level="INFO", logger=log)
+coloredlogs.install(level="DEBUG", logger=log)
 
 import ply.yacc as yacc
 
 # Get the token map from the lexer.  This is required.
 from langlex import tokens
 from classes import Variable, Assignment, Expression, Condition, Immediate
-from z3_backend import dispatch_z3
+from z3_backend import dispatch
 
 import z3
 
 solver = z3.Solver()
 variables = {}
+conditions = {}
 
 def p_input(p):
     'input : input NEWLINE'
@@ -31,6 +32,8 @@ def p_input_ass(p):
 def p_input_cond(p):
     'input : condition_stmt'
     log.debug("Condition " + str(p[1]))
+    name, condition = p[1]
+    conditions[name.upper()] = condition
 
 def p_input_input(p):
     'input : input_stmt'
@@ -47,20 +50,31 @@ def p_input_stmt(p):
 def p_assignment_stmt_uncond(p):
     'assignment_stmt : ASSIGNSTART COLON assignment'
     assignment = p[3]
-    assignment.left.symb = assignment.right
     p[0] = assignment
 
 def p_assignment_stmt_cond(p):
     'assignment_stmt : ASSIGNSTART conditionlist COLON assignment'
-    p[0] = p[1:]
+    assignement = p[4]
+    assignement.left.symb = assignement.right
+    conds = [conditions[c] for c in p[2]]
+    assignement.conditions = [conditions[c] for c in p[2]]
+    p[0] = assignement
 
 def p_condition_stmt_uncond(p):
     'condition_stmt : CONDITIONNAME COLON conditionexpr'
-    p[0] = p[1:]
+    p[0] = (p[1], p[3])
 
 def p_condition_stmt_cond(p):
     'condition_stmt : CONDITIONNAME conditionlist COLON conditionexpr'
-    p[0] = p[1:]
+    cond = p[4]
+    cond.conditions = [conditions[c] for c in p[2]]
+    p[0] = (p[1], cond)
+
+def p_condition_stmt_noexpr(p):
+    'condition_stmt : CONDITIONNAME conditionlist SEMICOLON'
+    conds = [conditions[c] for c in p[2]]
+    cond = Condition(True, False, conds)
+    p[0] = (p[1], cond)
 
 def p_assignment(p):
     'assignment : VARIABLE ARROW expression'
@@ -104,7 +118,7 @@ def p_expression_z3operator2(p):
     'expression : Z3OPERATOR2 expression expression'
     p2 = p[2]
     p3 = p[3]
-    p[0] = Expression(dispatch_z3(p[1], p2, p3))
+    p[0] = Expression(dispatch(p[1], p2, p3))
 
 def p_expression_parens(p):
     'expression : LPAREN expression RPAREN'
@@ -115,13 +129,13 @@ def p_expression_slice(p):
     p1 = p[1].expr
     p3 = p[3]
     p5 = p[5]
-    p[0] = Expression(dispatch_z3('Slice', p1, p3, p5))
+    p[0] = Expression(dispatch('Slice', p1, p3, p5))
 
 def p_expression_indexing(p):
     'expression : expression LBRACKETS expression RBRACKETS'
     p1 = p[1].expr
     p3 = p[3]
-    p[0] = Expression(dispatch_z3('Slice', p1, p3))
+    p[0] = Expression(dispatch('Slice', p1, p3))
 
 def p_expression_variable(p):
     'expression : VARIABLE'
