@@ -173,3 +173,62 @@ class Condition(object):
         if len(self.conditions) != 0:
             s += f" if {self._conditions}>"
         return s
+
+class ConditionListEntry(Base):
+    def __init__(self, name, negated=False):
+        self.name = name
+        self.negated = negated
+
+    def __add__(self, other):
+        if isinstance(other, ConditionList):
+            return ConditionList([self, *other.l])
+        elif isinstance(other, ConditionListEntry):
+            return ConditionList([self, other])
+        else:
+            t = type(other)
+            raise TypeError(f"other must be either a ConditionList or a ConditionListEntry"
+                            f"It is {t} instead")
+    def __repr__(self):
+        return self.name
+
+class ConditionList(Base):
+    def __init__(self, l):
+        if not isinstance(l, list):
+            t = type(l)
+            raise TypeError(f"l must be a list. It is {t} instead")
+        if not all(isinstance(x, ConditionListEntry) for x in l):
+            raise TypeError("All elements of l must be of type ConditionListEntry")
+
+        self.l = l
+
+    @property
+    def names(self):
+        return [x.name for x in self.l]
+
+    def __iadd__(self, other):
+        if isinstance(other, ConditionList):
+            self.l += other.l
+        elif isinstance(other, ConditionListEntry):
+            self.l += [other]
+        else:
+            t = type(other)
+            raise TypeError(f"other must be either a ConditionList or a ConditionListEntry"
+                            f"It is {t} instead")
+        return self
+
+    def __add__(self, other):
+        if isinstance(other, ConditionList):
+            return ConditionList(self.l + other.l)
+        elif isinstance(other, ConditionListEntry):
+            return ConditionList(self.l + [other])
+        else:
+            t = type(other)
+            raise TypeError(f"other must be either a ConditionList or a ConditionListEntry"
+                            f"It is {t} instead")
+
+    def __repr__(self):
+        s = "[" + ', '.join(str(x) for x in self.l) + ']'
+        return s
+
+    def __iter__(self):
+        return self.l.__iter__()

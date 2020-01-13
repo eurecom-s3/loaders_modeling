@@ -23,11 +23,26 @@ def BITOR(a, b):
 def BITAND(a, b):
     return a & b
 
+def BITNOT(a):
+    return ~a
+
+def ISPOW2(a):
+    size = a.size()
+    one = z3.BitVecVal(1, size)
+    zero = z3.BitVecVal(0, size)
+    return (a & (a - one) == zero)
+
 def GE(a, b):
     return a >= b
 
 def LE(a, b):
+    return a <= b
+
+def LT(a, b):
     return a < b
+
+def GT(a, b):
+    return a > b
 
 def Slice(var, start, cnt=1):
     if isinstance(start, z3.BitVecRef):
@@ -53,14 +68,21 @@ z3_funcs = {'ADD'   : z3.Sum,
             'NEQ'   : NEQ,
             'GE'    : GE,
             'LE'    : LE,
+            'GT'    : GT,
+            'LT'    : LT,
             'BITOR' : BITOR,
             'BITAND': BITAND,
+            'BITNOT': BITNOT,
             'Slice' : Slice,
+            'ISPOW2': ISPOW2,
 }
 
-z3_funcs_sized = {'ADD', 'SUB', 'UDIV', 'EQ', 'NEQ', 'GE', 'LE', 'ULE', 'BITOR', 'BITAND'}
+z3_funcs_sized = {'ADD', 'SUB', 'UDIV', 'EQ', 'NEQ', 'GE', 'LE', 'GT', 'LT', 'ULE', 'BITOR', 'BITAND'}
 z3_funcs_bool  = {'OR', 'AND', 'NOT'}
 z3_funcs_unsigned = {'BITOR', 'BITAND', 'ULE'}
+
+def dispatch_z3_1(func, arg):
+    return z3_funcs[func](arg)
 
 def dispatch_z3_2(func, arg1, arg2):
     if func not in z3_funcs:
@@ -93,7 +115,7 @@ def dispatch_z3(func, *args):
                      " arguments")
         raise TypeError
     if len(args) == 1:
-        pass
+        return dispatch_z3_1(func, *args)
     elif len(args) == 2:
         return dispatch_z3_2(func, *args)
     elif len(args) == 3:

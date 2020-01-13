@@ -23,6 +23,7 @@ tokens = (
     'COMMA',
     'COLON',
     'SEMICOLON',
+    'EXCLAMATION',
     'TERMINATOR',
 
     # slicing
@@ -46,13 +47,13 @@ tokens = (
 )
 
 def t_Z3OPERATOR1(t):
-    r'(NOT|Not)'
+    r'(NOT|Not|BITNOT|BITNot|BitNot|ISPOW2|IsPow2|isPow2)'
     t.value = t.value.upper()
     log.debug("OPERATOR1 token")
     return t
 
 def t_Z3OPERATOR2(t):
-    r"(ADD|SUB|UDIV|AND|OR|ULE|Add|Sub|UDiv|And|Or|ULe|BITAND|BITAnd|BitAnd|BITOR|BITOr|BitOr|LE|Le|GE|Ge|NEQ|NEq|EQ|Eq)"
+    r"(ADD|SUB|UDIV|AND|OR|ULE|Add|Sub|UDiv|And|Or|ULe|BITAND|BITAnd|BitAnd|BITOR|BITOr|BitOr|LE|Le|GE|Ge|NEQ|NEq|EQ|Eq|LT|Lt|GT|Gt)"
     log.debug("OPERATOR2 token")
     t.value = t.value.upper()
     return t
@@ -74,7 +75,8 @@ t_LPAREN     = r'\('
 t_RPAREN     = r'\)'
 t_ARROW      = r'<-'
 t_COLON      = r':'
-t_SEMICOLON      = r';'
+t_SEMICOLON  = r';'
+t_EXCLAMATION= r'!'
 t_COMMA      = r','
 t_NEWLINE    = r'\n'
 
@@ -95,7 +97,9 @@ def t_CONDITIONNAME(t):
 
 #t_CONDITION      = r'v\d+'
 
-t_VARIABLE   = "[a-zA-Z_]+"
+def t_VARIABLE(t):
+    r"[a-zA-Z_]+"
+    return t
 
 # A regular expression rule with some action code
 def t_NUMBER(t):
