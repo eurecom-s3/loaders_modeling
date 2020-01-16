@@ -11,6 +11,12 @@ from classes import Base, Immediate, Variable, Expression
 def SUB(a, b):
     return a - b
 
+def MUL(a, b):
+    return a * b
+
+def MOD(a, b):
+    return a % b
+
 def EQ(a, b):
     return a == b
 
@@ -44,6 +50,9 @@ def LT(a, b):
 def GT(a, b):
     return a > b
 
+def INT(a, b):
+    return z3.BitVecVal(a.as_long(), b.as_long()*8)
+
 def Slice(var, start, cnt=1):
     if isinstance(start, z3.BitVecRef):
         zeroext = z3.ZeroExt(var.size() - start.size(), start)
@@ -59,11 +68,16 @@ def Slice(var, start, cnt=1):
 
 z3_funcs = {'ADD'   : z3.Sum,
             'SUB'   : SUB,
+            'MUL'   : MUL,
             'UDIV'  : z3.UDiv,
+            'MOD'   : MOD,
             'AND'   : z3.And,
             'OR'    : z3.Or,
             'NOT'   : z3.Not,
             'ULE'   : z3.ULE,
+            'UGE'   : z3.UGE,
+            'ULT'   : z3.ULT,
+            'UGT'   : z3.UGT,
             'EQ'    : EQ,
             'NEQ'   : NEQ,
             'GE'    : GE,
@@ -75,11 +89,12 @@ z3_funcs = {'ADD'   : z3.Sum,
             'BITNOT': BITNOT,
             'Slice' : Slice,
             'ISPOW2': ISPOW2,
+            'INT'   : INT
 }
 
-z3_funcs_sized = {'ADD', 'SUB', 'UDIV', 'EQ', 'NEQ', 'GE', 'LE', 'GT', 'LT', 'ULE', 'BITOR', 'BITAND'}
+z3_funcs_sized = {'ADD', 'SUB', 'MUL', 'UDIV', 'MOD', 'EQ', 'NEQ', 'GE', 'LE', 'GT', 'LT', 'ULE', 'BITOR', 'BITAND'}
 z3_funcs_bool  = {'OR', 'AND', 'NOT'}
-z3_funcs_unsigned = {'BITOR', 'BITAND', 'ULE'}
+z3_funcs_unsigned = {'BITOR', 'BITAND', 'ULE', 'ULT', 'UGT', 'UGE', 'EQ', 'NEQ'}
 
 def dispatch_z3_1(func, arg):
     return z3_funcs[func](arg)

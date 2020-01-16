@@ -42,6 +42,7 @@ tokens = (
 
     'NUMBER',
     'CHAR',
+    'BOOL',
     'VARIABLE',
     'INPUT'
 )
@@ -53,15 +54,22 @@ def t_Z3OPERATOR1(t):
     return t
 
 def t_Z3OPERATOR2(t):
-    r"(ADD|SUB|UDIV|AND|OR|ULE|Add|Sub|UDiv|And|Or|ULe|BITAND|BITAnd|BitAnd|BITOR|BITOr|BitOr|LE|Le|GE|Ge|NEQ|NEq|EQ|Eq|LT|Lt|GT|Gt)"
+    r"(ADD|SUB|UDIV|AND|OR|ULE|UGE|ULT|UGT|Add|Sub|UDiv|And|Or|ULe|UGe|ULt|UGt|BITAND|BITAnd|BitAnd|BITOR|BITOr|BitOr|LE|Le|GE|Ge|NEQ|NEq|EQ|Eq|LT|Lt|GT|Gt|INT|Int|MOD|Mod|MUL|Mul)\s"
     log.debug("OPERATOR2 token")
-    t.value = t.value.upper()
+    t.value = t.value[:-1].upper()
     return t
 
 def t_CHAR(t):
     r'"[^"]"'
     t.value = ord(t.value[1])
     log.debug("A single char value token")
+    return t
+
+def t_BOOL(t):
+    r"(TRUE|True|true|FALSE|False|false)"
+    val = t.value.upper()
+    t.value = True if val == "TRUE" else False
+    log.debug(f"Found immediate boolean value {val}")
     return t
 
 def t_TERMINATOR(t):
@@ -86,7 +94,7 @@ def t_INPUT(t):
     return t
 
 def t_ASSIGNSTART(t):
-    r'(P|p)'
+    r'^(P|p)'
     log.debug("Assignement start token")
     return t
 

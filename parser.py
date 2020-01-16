@@ -2,6 +2,8 @@
 
 import sys
 import logging
+import pickle
+
 import coloredlogs
 
 log = logging.getLogger(__name__)
@@ -12,14 +14,14 @@ import ply.yacc as yacc
 
 # Get the token map from the lexer.  This is required.
 from langlex import tokens
-from classes import Variable, Assignment, Expression, Condition, Immediate, ConditionList, ConditionListEntry
+from classes import Variable, Assignment, Expression, Condition, Immediate, BoolImmediate, ConditionList, ConditionListEntry
 from z3_backend import dispatch
 
 import z3
 
-solver = z3.Solver()
 variables = {}
 conditions = {}
+input_name = None
 
 def p_input(p):
     'input : input NEWLINE'
@@ -58,7 +60,8 @@ def p_assignment_stmt_cond(p):
     assignement = p[4]
     assignement.left.symb = assignement.right
     conditionslist = p[2]
-    conds = [conditions[c] for c in conditionslist.names]
+    conds = [~conditions[c.name] if c.negated else conditions[c.name]
+             for c in conditionslist]
     assignement.conditions = conds
     p[0] = assignement
 
@@ -180,30 +183,19 @@ def p_expression_string(p):
     'expression : CHAR'
     p[0] = Immediate(p[1])
 
+def p_expression_bool(p):
+    'expression : BOOL'
+    p[0] = BoolImmediate(p[1])
 
 # Error rule for syntax errors
 def p_error(p):
     if p is None:
         return
-    log.error("Syntax error in input! %s" % p)
+    log.critical("Syntax error in input! %s" % p)
+    raise Exception(p)
 
-# Build the parser
 try:
     parser = yacc.yacc()
 except yacc.YaccError as e:
     log.exception(e)
     sys.exit(1)
-solver = z3.Solver()
-
-cnt = 0
-while True:
-    try:
-        s = input()
-    except EOFError:
-        break
-    cnt += 1
-    if not s: continue
-    log.info(f"Line {cnt}: {s}")
-    result = parser.parse(s)
-    if result:
-        print(result)

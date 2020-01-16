@@ -44,6 +44,20 @@ class Immediate(Expression):
             self._symb = z3.BitVecVal(self.expr, self.size)
         return self._symb
 
+class BoolImmediate(Expression):
+    def __init__(self, expr):
+        if not isinstance(expr, bool):
+            t = type(expr)
+            raise TypeError(f"expr must be of type bool. {t} found instead")
+        self.expr = expr
+        self._symb = z3.BoolVal(expr)
+
+    @property
+    def size(self):
+        log.error("Asking the size of a boolean value...")
+        raise Excpetion
+
+
 class Variable(Base):
     def __init__(self, name, symb=None):
         self.name = name
@@ -92,7 +106,7 @@ class Assignment(object):
         self._conditions = conditions
 
     def __repr__(self):
-        s = f"<Assignement {self.left} <- {self.right}"
+        s = f"<Assignment {self.left} <- {self.right}"
         if len(self.conditions) != 0:
             s += f" if {self._conditions}>"
         return s
@@ -127,6 +141,8 @@ class Condition(object):
             self.expr = expr
         elif isinstance(expr, bool):
             self.expr = Expression(z3.BoolVal(expr))
+        elif isinstance(expr, z3.BoolRef):
+            self.expr = Expression(expr)
         else:
             raise TypeError
         self.isterminal = bool(isterminal)
@@ -173,6 +189,10 @@ class Condition(object):
         if len(self.conditions) != 0:
             s += f" if {self._conditions}>"
         return s
+
+    def __invert__(self):
+        return Condition(z3.Not(self.expr.symb),
+                         self.isterminal, list(self.conditions))
 
 class ConditionListEntry(Base):
     def __init__(self, name, negated=False):

@@ -2,11 +2,13 @@ backcall==0.1.0
 boto==2.49.0
 coloredlogs==10.0
 decorator==4.4.1
+future==0.18.2
 humanfriendly==4.18
 ipython==7.10.1
 ipython-genutils==0.2.0
 jedi==0.15.1
 parso==0.5.1
+pefile==2019.4.18
 pexpect==4.7.0
 pickleshare==0.7.5
 ply==3.11
