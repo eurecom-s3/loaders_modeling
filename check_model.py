@@ -43,12 +43,14 @@ def check_sat(solver):
         return model
         print(model.eval(variables["HEADER"].symb))
 
+# this routine... if it works it's miracle
 def generate_testcase(model):
     header = variables['HEADER']
     bitvec = model.eval(header.symb)
     string_hex_rev = hex(bitvec.as_long())[2:]
+    string_hex_rev = ('0' if (len(string_hex_rev) % 2 == 1) else "") + string_hex_rev
     string_hex = ''.join([string_hex_rev[i:i+2]
-                          for i in range(len(string_hex_rev), 0, -2)])
+                          for i in range(len(string_hex_rev)-2, -2, -2)])
     test = bytes.fromhex(string_hex)
     test += b'\x00' * (header.size - len(test))
     return test
