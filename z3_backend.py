@@ -92,7 +92,7 @@ z3_funcs = {'ADD'   : z3.Sum,
             'INT'   : INT
 }
 
-z3_funcs_sized = {'ADD', 'SUB', 'MUL', 'UDIV', 'MOD', 'EQ', 'NEQ', 'GE', 'LE', 'GT', 'LT', 'ULE', 'BITOR', 'BITAND'}
+z3_funcs_sized = {'ADD', 'SUB', 'MUL', 'UDIV', 'MOD', 'EQ', 'NEQ', 'GE', 'LE', 'GT', 'LT', 'ULE', 'UGE', 'UGT', 'ULT', 'BITOR', 'BITAND'}
 z3_funcs_bool  = {'OR', 'AND', 'NOT'}
 z3_funcs_unsigned = {'BITOR', 'BITAND', 'ULE', 'ULT', 'UGT', 'UGE', 'EQ', 'NEQ'}
 

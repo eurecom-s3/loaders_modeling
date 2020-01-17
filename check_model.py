@@ -66,5 +66,5 @@ if __name__ == "__main__":
         test = generate_testcase(model)
         with open("test", "wb") as fp:
             fp.write(test)
-    pe = parse_pe()
-    log.info(pe)
+        pe = parse_pe()
+        log.info(pe)
