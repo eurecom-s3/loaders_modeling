@@ -14,7 +14,7 @@ import ply.yacc as yacc
 
 # Get the token map from the lexer.  This is required.
 from langlex import tokens
-from classes import Variable, Assignment, Expression, Condition, Immediate, BoolImmediate, ConditionList, ConditionListEntry
+from classes import Variable, Assignment, Expression, Condition, Immediate, BoolImmediate, ConditionList, ConditionListEntry, Loop
 from z3_backend import dispatch
 
 import z3
@@ -40,8 +40,16 @@ def p_input_cond(p):
 
 def p_input_input(p):
     'input : input_stmt'
-    log.debug("Input" + str(p[1]))
+    log.debug("Input " + str(p[1]))
     variables[p[1].name] = p[1]
+
+def p_input_loopstart(p):
+    'input : loopstart_stmt'
+    log.debug("Loop start " + str(p[1]))
+
+def p_input_loopend(p):
+    'input : loopend_stmt'
+    log.debug("Loop end " + str(p[1]))
 
 def p_input_stmt(p):
     'input_stmt : INPUT VARIABLE NUMBER'
@@ -66,11 +74,11 @@ def p_assignment_stmt_cond(p):
     p[0] = assignement
 
 def p_condition_stmt_uncond(p):
-    'condition_stmt : CONDITIONNAME COLON conditionexpr'
+    'condition_stmt : CONDITIONSTART COLON conditionexpr'
     p[0] = (p[1], p[3])
 
 def p_condition_stmt_cond(p):
-    'condition_stmt : CONDITIONNAME conditionlist COLON conditionexpr'
+    'condition_stmt : CONDITIONSTART conditionlist COLON conditionexpr'
     cond = p[4]
     conditionslist = p[2]
     conds = [conditions[c] for c in conditionslist.names]
@@ -78,11 +86,22 @@ def p_condition_stmt_cond(p):
     p[0] = (p[1], cond)
 
 def p_condition_stmt_noexpr(p):
-    'condition_stmt : CONDITIONNAME conditionlist SEMICOLON'
+    'condition_stmt : CONDITIONSTART conditionlist SEMICOLON'
     conditionslist = p[2]
     conds = [conditions[c] for c in conditionslist.names]
     cond = Condition(True, False, conds)
     p[0] = (p[1], cond)
+
+
+def p_loopstart_stmt(p):
+    'loopstart_stmt : LOOPSTART COLON VARIABLE ARROW LOOP LPAREN expression COMMA expression COMMA NUMBER COMMA expression COMMA NUMBER RPAREN'
+    loopindex = p[1]
+    loop = Loop(p[3], p[7], p[9], p[11], p[13], p[15])
+    p[0] = (loopindex, loop)
+
+def p_loopend_stmt(p):
+    'loopend_stmt : LOOPEND'
+    p[0] = (p[1], )
 
 def p_assignment(p):
     'assignment : VARIABLE ARROW expression'

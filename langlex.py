@@ -18,8 +18,11 @@ tokens = (
     'Z3OPERATOR2',
 
     'ASSIGNSTART',
+    'CONDITIONSTART',
     'CONDITIONNAME',
-#    'CONDITION',
+    'LOOPSTART',
+    'LOOPEND',
+    'LOOP',
     'COMMA',
     'COLON',
     'SEMICOLON',
@@ -94,16 +97,41 @@ def t_INPUT(t):
     return t
 
 def t_ASSIGNSTART(t):
-    r'^(P|p)'
+    r'^(    )*(P|p)'
     log.debug("Assignement start token")
+    t.value = t.value.lstrip()
+    return t
+
+def t_CONDITIONSTART(t):
+    r'^(    )*(V|v)\d+'
+    log.debug("Condition start token")
+    t.value = t.value.lstrip()
+    return t
+
+def t_LOOPSTART(t):
+    r'^(    )*(L|l)\d+'
+    log.debug("Loop start token")
+    v = t.value.lstrip()
+    v = int(v[1:])
+    t.value = v
+    return t
+
+def t_LOOPEND(t):
+    r'^(    )*(END|End|end)\s+(L|l)\d+'
+    log.debug("Loop end token")
+    v = t.value.lstrip()
+    v = int(v[5:])
+    t.value = v
+    return t
+
+def t_LOOP(t):
+    r'LOOP'
     return t
 
 def t_CONDITIONNAME(t):
     r'(V|v)\d+'
     log.debug("Condition name token")
     return t
-
-#t_CONDITION      = r'v\d+'
 
 def t_VARIABLE(t):
     r"[a-zA-Z_]+"

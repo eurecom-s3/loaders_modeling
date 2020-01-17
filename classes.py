@@ -135,6 +135,30 @@ class Assignment(object):
                             self.right.symb, self.left.symb)
             self.left.symb = newexpr
 
+class Loop(object):
+    def __init__(self, output_name, input_var, startpos, structsize, count, maxunroll):
+        self.output_name = output_name
+        if not isinstance(input_var, Expression):
+            t = type(input_var)
+            raise TypeError(f"Expected Expression for input_var."
+                            f"Found {t}")
+        self.input_var = input_var
+
+        if not isinstance(startpos, Expression):
+            t = type(start_pos)
+            raise TypeError(f"Expected Expression for start_pos."
+                            f"Found {t}")
+        self.startpos = startpos
+
+        if not isinstance(count, Expression):
+            t = type(count)
+            raise TypeError(f"Expected Expression for count."
+                            f"Found {t}")
+        self.input_var = count
+
+        self.maxunroll = maxunroll
+        self.structsize = structsize
+
 class Condition(object):
     def __init__(self, expr, isterminal, conditions=list()):
         if isinstance(expr, Expression):
