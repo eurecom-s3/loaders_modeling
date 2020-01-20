@@ -1,8 +1,8 @@
-#!/usr/bin/env python
-
 import sys
 import logging
 import pickle
+from collections import deque, defaultdict
+from utils import customdefdict
 
 import coloredlogs
 
@@ -14,14 +14,15 @@ import ply.yacc as yacc
 
 # Get the token map from the lexer.  This is required.
 from langlex import tokens
-from classes import Variable, Assignment, Expression, Condition, Immediate, BoolImmediate, ConditionList, ConditionListEntry, Loop
+from classes import Variable, Assignment, Expression, Condition, Immediate, BoolImmediate, ConditionList, ConditionListEntry, Loop, Input
 from z3_backend import dispatch
 
-import z3
-
-variables = {}
+variables = customdefdict(lambda x: Variable(x))
 conditions = {}
+block_stack = deque()
 input_name = None
+
+statements = []
 
 def p_input(p):
     'input : input NEWLINE'
@@ -30,32 +31,52 @@ def p_input(p):
 def p_input_ass(p):
     'input : assignment_stmt'
     log.debug("Assignment: " + str(p[1]))
-    p[1].apply()
+    if len(block_stack) == 0:
+        statements.append(p[1])
+    else:
+        block = block_stack.pop()
+        block.add_statement(p[1])
+        block_stack.append(block)
 
 def p_input_cond(p):
     'input : condition_stmt'
     log.debug("Condition " + str(p[1]))
     name, condition = p[1]
     conditions[name.upper()] = condition
+    if len(block_stack) == 0:
+        statements.append(condition)
+    else:
+        block = block_stack.pop()
+        block.add_statement(condition)
+        block_stack.append(block)
 
 def p_input_input(p):
     'input : input_stmt'
     log.debug("Input " + str(p[1]))
-    variables[p[1].name] = p[1]
+    stmt = Input(p[1][0], p[1][1])
+    statements.append(stmt)
+    variables[p[1][0].name] = p[1][0]
 
 def p_input_loopstart(p):
     'input : loopstart_stmt'
     log.debug("Loop start " + str(p[1]))
+    loop = p[1][1]
+    block_stack.append(loop)
+    var = variables[loop.output_name]
+    input_var = loop.input_var
 
 def p_input_loopend(p):
     'input : loopend_stmt'
-    log.debug("Loop end " + str(p[1]))
+    loop = block_stack.pop()
+    if loop._loop_name != p[1][0]:
+        log.critical("Loop end does not match current loop name")
+        raise ValueError
+    log.debug("Loop end " + str(p[1][0]))
 
 def p_input_stmt(p):
     'input_stmt : INPUT VARIABLE NUMBER'
     log.debug("Input statement")
-    symb = z3.BitVec(p[2], p[3] * 8)
-    var = Variable(p[2], symb)
+    var = (Variable(p[2]), p[3])
     p[0] = var
 
 def p_assignment_stmt_uncond(p):
@@ -75,11 +96,13 @@ def p_assignment_stmt_cond(p):
 
 def p_condition_stmt_uncond(p):
     'condition_stmt : CONDITIONSTART COLON conditionexpr'
+    p[3].name = p[1]
     p[0] = (p[1], p[3])
 
 def p_condition_stmt_cond(p):
     'condition_stmt : CONDITIONSTART conditionlist COLON conditionexpr'
     cond = p[4]
+    cond.name = p[1]
     conditionslist = p[2]
     conds = [conditions[c] for c in conditionslist.names]
     cond.conditions = conds
@@ -96,7 +119,7 @@ def p_condition_stmt_noexpr(p):
 def p_loopstart_stmt(p):
     'loopstart_stmt : LOOPSTART COLON VARIABLE ARROW LOOP LPAREN expression COMMA expression COMMA NUMBER COMMA expression COMMA NUMBER RPAREN'
     loopindex = p[1]
-    loop = Loop(p[3], p[7], p[9], p[11], p[13], p[15])
+    loop = Loop(p[1], p[3], p[7], p[9], p[11], p[13], p[15])
     p[0] = (loopindex, loop)
 
 def p_loopend_stmt(p):
@@ -126,18 +149,6 @@ def p_conditionlistint_2(p):
     'conditionlistint : conditionlistint COMMA conditionlistentry'
     p[0] = p[1] + p[3]
 
-# def p_conditionlistone(p):
-#     'conditionlistone : conditionlistentry'
-#     p[0] = ConditionList([p[1]])
-
-# def p_conditionlistmulti(p):
-#     'conditionlistmulti : | conditionlistentry COMMA conditionlistmulti'
-#     p[0] = p[1] + p[3]
-
-# def p_conditionlistmulti(p):
-#     'conditionlistmulti : conditionlistentry'
-#     p[0] = p[1] + p[3]
-
 def p_conditionlistentry_negcondition(p):
     'conditionlistentry : EXCLAMATION CONDITIONNAME'
     p[0] = ConditionListEntry(p[2], False)
@@ -156,16 +167,14 @@ def p_condition_normal(p):
 
 def p_expression_z3operator1(p):
     'expression : Z3OPERATOR1 expression'
-    p2 = p[2].expr
-    if isinstance(p2, Variable):
-        p2 = p2.symb
-    p[0] = Expression(dispatch(p[1], p2))
+    p2 = p[2]
+    p[0] = Expression(p[1], p2)
 
 def p_expression_z3operator2(p):
     'expression : Z3OPERATOR2 expression expression'
     p2 = p[2]
     p3 = p[3]
-    p[0] = Expression(dispatch(p[1], p2, p3))
+    p[0] = Expression(p[1], p2, p3)
 
 def p_expression_parens(p):
     'expression : LPAREN expression RPAREN'
@@ -173,16 +182,16 @@ def p_expression_parens(p):
 
 def p_expression_slice(p):
     'expression : expression LBRACKETS expression COMMA expression RBRACKETS'
-    p1 = p[1].expr
+    p1 = p[1]
     p3 = p[3]
     p5 = p[5]
-    p[0] = Expression(dispatch('Slice', p1, p3, p5))
+    p[0] = Expression('Slice', p1, p3, p5)
 
 def p_expression_indexing(p):
     'expression : expression LBRACKETS expression RBRACKETS'
-    p1 = p[1].expr
+    p1 = p[1]
     p3 = p[3]
-    p[0] = Expression(dispatch('Slice', p1, p3))
+    p[0] = Expression('Index', p1, p3)
 
 def p_expression_variable(p):
     'expression : VARIABLE'
@@ -191,20 +200,20 @@ def p_expression_variable(p):
     if varname not in variables:
         log.critical("Using variable %s before assignement" % varname)
         raise NameError
-    p[0] = Expression(variables[varname])
+    p[0] = Expression("VAR", variables[varname])
 
 def p_expression_number(p):
     'expression : NUMBER'
     log.debug("Found NUMBER " + str(p[1]))
-    p[0] = Immediate(p[1])
+    p[0] = Expression("IMM", Immediate(p[1]))
 
 def p_expression_string(p):
     'expression : CHAR'
-    p[0] = Immediate(p[1])
+    p[0] = Expression("IMM", Immediate(p[1]))
 
 def p_expression_bool(p):
     'expression : BOOL'
-    p[0] = BoolImmediate(p[1])
+    p[0] = Expression("IMM", BoolImmediate(p[1]))
 
 # Error rule for syntax errors
 def p_error(p):

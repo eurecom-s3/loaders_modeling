@@ -1,4 +1,5 @@
-import z3
+class Statement(object):
+    pass
 
 class Base(object):
     def __sub__(self, other):
@@ -7,81 +8,79 @@ class Base(object):
         return other - self.symb
 
 class Expression(Base):
-    def __init__(self, expr):
-        self.expr = expr
-
-    @property
-    def symb(self):
-        if isinstance(self.expr, Variable):
-            return self.expr.symb
-        else:
-            return self.expr
+    OPCODES = {'VAR'    : 1,
+               'IMM'    : 1,
+               'ADD'    : 2,
+               'SUB'    : 2,
+               'MUL'    : 2,
+               'UDIV'   : 2,
+               'MOD'    : 2,
+               'AND'    : 2,
+               'OR'     : 2,
+               'NOT'    : 1,
+               'ULE'    : 2,
+               'UGE'    : 2,
+               'ULT'    : 2,
+               'UGT'    : 2,
+               'EQ'     : 2,
+               'NEQ'    : 2,
+               'GE'     : 2,
+               'LE'     : 2,
+               'GT'     : 2,
+               'LT'     : 2,
+               'BITOR'  : 2,
+               'BITAND' : 2,
+               'BITNOT' : 1,
+               'Slice'  : 3,
+               'Index'  : 2,
+               'ISPOW2' : 1,
+               'INT'    : 2,
+    }
+    def __init__(self, opcode, *operands):
+        if opcode not in self.OPCODES:
+            raise ValueError(f"Unknown opcode {opcode}")
+        self.opcode = opcode
+        if len(operands) != self.OPCODES[opcode]:
+            raise ValueError(f"Opcode {opcode} expects {self.OPCODES[opcode]}."
+                             f"{len(operands)} provided instead.")
+        self.operands = operands
 
     def __repr__(self):
-        tmp = f"<Expression {self.expr.__repr__()}>"
-        return " ".join(tmp.split())
+        tmp = f"<Expression ({self.opcode} {self.operands})>"
+        return tmp
 
-    @property
-    def size(self):
-        size = self.symb.size
-        return size() if callable(size) else size
-
-class Immediate(Expression):
-    def __init__(self, expr):
-        self.expr = expr
-        self._symb = None
-
-    @property
-    def size(self):
-        return max(self.expr.bit_length(), 8)
+class Immediate(object):
+    def __init__(self, value):
+        self.value = value
 
     def __repr__(self):
-        return f"<Immediate {self.expr}>"
+        return f"<Immediate {self.value}>"
 
-    @property
-    def symb(self):
-        if not self._symb:
-            self._symb = z3.BitVecVal(self.expr, self.size)
-        return self._symb
-
-class BoolImmediate(Expression):
-    def __init__(self, expr):
-        if not isinstance(expr, bool):
+class BoolImmediate(Immediate):
+    def __init__(self, value):
+        if not isinstance(value, bool):
             t = type(expr)
             raise TypeError(f"expr must be of type bool. {t} found instead")
-        self.expr = expr
-        self._symb = z3.BoolVal(expr)
-
-    @property
-    def size(self):
-        log.error("Asking the size of a boolean value...")
-        raise Excpetion
+        self.value = value
 
 
-class Variable(Base):
-    def __init__(self, name, symb=None):
+class Variable(object):
+    def __init__(self, name):
         self.name = name
-        self._symb = symb
 
     def __repr__(self):
         return f"<Variable {self.name}>"
 
-    @property
-    def symb(self):
-        if isinstance(self._symb, Expression):
-            return self._symb.symb
-        else:
-            return self._symb
-    @symb.setter
-    def symb(self, new):
-        self._symb = new
+class Input(Statement):
+    def __init__(self, var, size):
+        self.var = var
+        self.size = size
 
-    @property
-    def size(self):
-        size = self.symb.size
-        return size() if callable(size) else size
+    def __repr__(self):
+        s = f"<Input {self.var} {self.size} bytes>"
+        return s
 
-class Assignment(object):
+class Assignment(Statement):
     def __init__(self, left, right, conditions=list()):
         if not isinstance(left, Variable):
             t = type(left)
@@ -127,16 +126,17 @@ class Assignment(object):
     def conditional(self):
         return len(self._conditions) != 0
 
-    def apply(self):
-        if not self.conditional:
-            self.left.symb = self.right.symb
-        else:
-            newexpr = z3.If(z3.And(*[x.model for x in self._conditions]),
-                            self.right.symb, self.left.symb)
-            self.left.symb = newexpr
+    # def apply(self):
+    #     if not self.conditional:
+    #         self.left.symb = self.right.symb
+    #     else:
+    #         newexpr = z3.If(z3.And(*[x.model for x in self._conditions]),
+    #                         self.right.symb, self.left.symb)
+    #         self.left.symb = newexpr
 
-class Loop(object):
-    def __init__(self, output_name, input_var, startpos, structsize, count, maxunroll):
+class Loop(Statement):
+    def __init__(self, loop_name, output_name, input_var, startpos, structsize, count, maxunroll):
+        self._loop_name = loop_name
         self.output_name = output_name
         if not isinstance(input_var, Expression):
             t = type(input_var)
@@ -154,19 +154,29 @@ class Loop(object):
             t = type(count)
             raise TypeError(f"Expected Expression for count."
                             f"Found {t}")
-        self.input_var = count
+        self.count = count
 
         self.maxunroll = maxunroll
         self.structsize = structsize
+        self._statements = []
 
-class Condition(object):
+    def add_statement(self, stmt):
+        if not isinstance(stmt, Statement):
+            t = type(stmt)
+            raise TypeError(f"Expected Statement for stmt"
+                            f"Found {t} instead")
+        self._statements.append(stmt)
+
+    def __repr__(self):
+        s = f"<Loop {self._loop_name}: {self.output_name} in {self.input_var}>"
+        return s
+
+class Condition(Statement):
     def __init__(self, expr, isterminal, conditions=list()):
         if isinstance(expr, Expression):
             self.expr = expr
         elif isinstance(expr, bool):
-            self.expr = Expression(z3.BoolVal(expr))
-        elif isinstance(expr, z3.BoolRef):
-            self.expr = Expression(expr)
+            self.expr = Expression("IMM", expr)
         else:
             raise TypeError
         self.isterminal = bool(isterminal)
@@ -178,6 +188,7 @@ class Condition(object):
         if not all(isinstance(x, Condition) for x in conditions):
             raise TypeError("Conditions must be a list of Condition object")
         self._conditions = conditions
+        self.name = None
 
     @property
     def conditions(self):
@@ -195,16 +206,16 @@ class Condition(object):
     def conditional(self):
         return len(self._conditions) != 0
 
-    @property
-    def model(self):
-        if not self.conditional:
-            return self.expr.symb
+    # @property
+    # def model(self):
+    #     if not self.conditional:
+    #         return self.expr.symb
 
-        if self.isterminal:
-            return z3.If(z3.And(*[x.model for x in self.conditions]),
-                         self.expr.symb,
-                         z3.BoolVal(True))
-        return z3.And(self.expr.symb, *[x.model for x in self.conditions])
+    #     if self.isterminal:
+    #         return z3.If(z3.And(*[x.model for x in self.conditions]),
+    #                      self.expr.symb,
+    #                      z3.BoolVal(True))
+    #     return z3.And(self.expr.symb, *[x.model for x in self.conditions])
 
     def __repr__(self):
         s = "<"
@@ -215,8 +226,8 @@ class Condition(object):
         return s
 
     def __invert__(self):
-        return Condition(z3.Not(self.expr.symb),
-                         self.isterminal, list(self.conditions))
+        return Condition(Expression("NOT", self.expr), self.isterminal,
+                         self._conditions)
 
 class ConditionListEntry(Base):
     def __init__(self, name, negated=False):
