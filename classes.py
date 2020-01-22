@@ -126,14 +126,6 @@ class Assignment(Statement):
     def conditional(self):
         return len(self._conditions) != 0
 
-    # def apply(self):
-    #     if not self.conditional:
-    #         self.left.symb = self.right.symb
-    #     else:
-    #         newexpr = z3.If(z3.And(*[x.model for x in self._conditions]),
-    #                         self.right.symb, self.left.symb)
-    #         self.left.symb = newexpr
-
 class Loop(Statement):
     def __init__(self, loop_name, output_name, input_var, startpos, structsize, count, maxunroll):
         self._loop_name = loop_name
@@ -205,17 +197,6 @@ class Condition(Statement):
     @property
     def conditional(self):
         return len(self._conditions) != 0
-
-    # @property
-    # def model(self):
-    #     if not self.conditional:
-    #         return self.expr.symb
-
-    #     if self.isterminal:
-    #         return z3.If(z3.And(*[x.model for x in self.conditions]),
-    #                      self.expr.symb,
-    #                      z3.BoolVal(True))
-    #     return z3.And(self.expr.symb, *[x.model for x in self.conditions])
 
     def __repr__(self):
         s = "<"
