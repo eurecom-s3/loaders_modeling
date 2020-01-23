@@ -43,6 +43,7 @@ def p_input_cond(p):
     log.debug("Condition " + str(p[1]))
     name, condition = p[1]
     conditions[name.upper()] = condition
+    condition.name = name.upper()
     if len(block_stack) == 0:
         statements.append(condition)
     else:
@@ -72,6 +73,7 @@ def p_input_loopend(p):
         log.critical("Loop end does not match current loop name")
         raise ValueError
     log.debug("Loop end " + str(p[1][0]))
+    statements.append(loop)
 
 def p_input_stmt(p):
     'input_stmt : INPUT VARIABLE NUMBER'

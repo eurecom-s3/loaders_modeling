@@ -1,9 +1,11 @@
 from math import log2
 import logging
 import coloredlogs
+from collections import deque
+
 log = logging.getLogger(__name__)
 log.setLevel(logging.DEBUG)
-coloredlogs.install(level="DEBUG", logger=log)
+coloredlogs.install(level="INFO", logger=log)
 
 import z3
 
@@ -210,6 +212,7 @@ def _eval_condition(condition):
             z3.And(*[_eval_condition(x) for x in condition.conditions]),
             _eval_expression(condition.expr),
             z3.BoolVal(True))
+
     return z3.And(_eval_expression(condition.expr),
                   *[_eval_condition(x) for x in condition.conditions])
 
@@ -219,7 +222,30 @@ def _exec_condition(stmt):
         terminal_conditions[stmt.name] = conditions[stmt.name]
 
 def _exec_loop(stmt):
-    pass
+    cond_prefix = f"L{stmt._loop_name}_"
+    statements = stmt._statements
+    ovar = Variable(stmt.output_name)
+    ivar = stmt.input_var
+    structsize = stmt.structsize
+    startpos = stmt.startpos
+    count = stmt.count
+    for index in range(stmt.maxunroll):
+        pref = cond_prefix + f"{index}_"
+        log.debug(f"Unrolling loop {stmt}. Index {index}")
+        lcond = Condition(Expression("UGT", count, index), False)
+        var_assignement = Assignment(ovar,
+                                     Expression("Slice", ivar,
+                                                Expression("ADD", startpos,
+                                                           index*structsize),
+                                                structsize),
+                                     [lcond])
+        _exec_statement(var_assignement)
+        for s in statements:
+            if isinstance(s, Condition):
+                s = s.clone()
+                s.add_prefix(pref)
+            s._conditions.append(lcond)
+            _exec_statement(s)
 
 _exec_table = {Input: _exec_input,
                Assignment: _exec_assignment,
@@ -242,6 +268,7 @@ def generate_solver():
     return solver
 
 def check_sat(solver):
+    log.info("Checking satisfiability")
     if solver.check().r != 1:
         log.critical("Model unsatisfiable")
         unsat_core = solver.unsat_core()
@@ -257,6 +284,7 @@ def check_sat(solver):
 
 # this routine... if it works it's miracle
 def generate_testcase(model):
+    log.info("Generating testcase")
     header = variables['HEADER']
     bitvec = model.eval(header)
     string_hex_rev = hex(bitvec.as_long())[2:]

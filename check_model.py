@@ -5,10 +5,12 @@ import z3
 import pefile
 
 log = logging.getLogger(__name__)
-coloredlogs.install(level="DEBUG", logger=log)
+coloredlogs.install(level="INFO", logger=log)
 
 from parser import parser, statements
 from z3_backend import *
+
+ftestcase = "testcase"
 
 def parse_file(f):
     lines = f.readlines()
@@ -21,8 +23,12 @@ def parse_file(f):
         if result:
             print(result)
 
+def write_testcase(testcase):
+    with open(ftestcase, "wb") as fp:
+        fp.write(testcase)
+
 def parse_pe():
-    pe = pefile.PE("test")
+    pe = pefile.PE(ftestcase)
     return pe
 
 if __name__ == "__main__":
@@ -33,4 +39,5 @@ if __name__ == "__main__":
     model = check_sat(solver)
     if model:
         testcase = generate_testcase(model)
+        write_testcase(testcase)
         pefile = parse_pe()

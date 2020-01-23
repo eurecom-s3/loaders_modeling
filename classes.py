@@ -1,3 +1,10 @@
+import logging
+import coloredlogs
+log = logging.getLogger(__name__)
+log.setLevel(logging.DEBUG)
+coloredlogs.install(level="INFO", logger=log)
+
+
 class Statement(object):
     pass
 
@@ -100,7 +107,7 @@ class Assignment(Statement):
             t = type(conditions)
             raise TypeError(f"Conditions must be a list. "
                             f"It is {t} instead")
-        if not all(isinstance(Condition, x) for x in conditions):
+        if not all(isinstance(x, Condition) for x in conditions):
             raise TypeError("Conditions must be a list of Condition object")
         self._conditions = conditions
 
@@ -164,7 +171,7 @@ class Loop(Statement):
         return s
 
 class Condition(Statement):
-    def __init__(self, expr, isterminal, conditions=list()):
+    def __init__(self, expr, isterminal, conditions=None):
         if isinstance(expr, Expression):
             self.expr = expr
         elif isinstance(expr, bool):
@@ -172,6 +179,9 @@ class Condition(Statement):
         else:
             raise TypeError
         self.isterminal = bool(isterminal)
+
+        if conditions is None:
+            conditions = []
 
         if not isinstance(conditions, list):
             t = type(conditions)
@@ -209,6 +219,18 @@ class Condition(Statement):
     def __invert__(self):
         return Condition(Expression("NOT", self.expr), self.isterminal,
                          self._conditions)
+
+    def add_prefix(self, prefix):
+        if self.name is None:
+            log.warning("Adding prefix to unnamed condition")
+            self.name = ""
+        self.name = prefix + self.name
+
+    def clone(self):
+        conditions = list(self._conditions)
+        new = Condition(self.expr, self.isterminal, conditions)
+        new.name = self.name
+        return new
 
 class ConditionListEntry(Base):
     def __init__(self, name, negated=False):
