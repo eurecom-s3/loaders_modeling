@@ -14,6 +14,7 @@ pickleshare==0.7.5
 ply==3.11
 prompt-toolkit==3.0.2
 ptyprocess==0.6.0
+pycparser==2.19
 Pygments==2.5.2
 six==1.13.0
 traitlets==4.3.3
