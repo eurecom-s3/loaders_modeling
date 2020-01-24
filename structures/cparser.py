@@ -20,14 +20,6 @@ except ImportError:
     pycparser = None
 
 
-DEFAULT_SIZES = {
-    'short'     : 16,
-    'int'       : 32,
-    'long'      : 64,
-    'long long' : 64
-}
-DEFAULT_BITS = 64
-
 class SimType:
     """
     SimType exists to track type information for SimProcedures.
@@ -538,41 +530,50 @@ class SimUnion(SimType):
     def __str__(self):
         return 'union %s' % (self.name, )
 
+DEFAULT_SIZES = {
+    'char'      : 8,
+    'short'     : 16,
+    'int'       : 32,
+    'long'      : 64,
+    'long long' : 64
+}
+DEFAULT_BITS = 64
 
 BASIC_TYPES = {
-    'char': SimTypeChar(),
-    'signed char': SimTypeChar(),
-    'unsigned char': SimTypeChar(),
+    'char': SimTypeNum(DEFAULT_SIZES['char'], True),
+    'signed char': SimTypeNum(DEFAULT_SIZES['char'], True),
+    'unsigned char': SimTypeNum(DEFAULT_SIZES['char'], False),
 
-    'short': SimTypeShort(True),
-    'signed short': SimTypeShort(True),
-    'unsigned short': SimTypeShort(False),
-    'short int': SimTypeShort(True),
-    'signed short int': SimTypeShort(True),
-    'unsigned short int': SimTypeShort(False),
+    'short': SimTypeNum(DEFAULT_SIZES['short'], True),
+    'signed short': SimTypeNum(DEFAULT_SIZES['short'], True),
+    'unsigned short': SimTypeNum(DEFAULT_SIZES['short'], False),
+    'short int': SimTypeNum(DEFAULT_SIZES['short'], True),
+    'signed short int': SimTypeNum(DEFAULT_SIZES['short'], True),
+    'unsigned short int': SimTypeNum(DEFAULT_SIZES['short'], False),
 
-    'int': SimTypeInt(True),
-    'signed int': SimTypeInt(True),
-    'unsigned int': SimTypeInt(False),
+    'int': SimTypeNum(DEFAULT_SIZES['int'], True),
+    'signed int': SimTypeNum(DEFAULT_SIZES['int'], True),
+    'unsigned int': SimTypeNum(DEFAULT_SIZES['int'], False),
 
-    'long': SimTypeLong(True),
-    'signed long': SimTypeLong(True),
-    'unsigned long': SimTypeLong(False),
-    'long int': SimTypeLong(True),
-    'signed long int': SimTypeLong(True),
-    'unsigned long int': SimTypeLong(False),
+    'long': SimTypeNum(DEFAULT_SIZES['long'], True),
+    'signed long': SimTypeNum(DEFAULT_SIZES['long'], True),
+    'unsigned long': SimTypeNum(DEFAULT_SIZES['long'], False),
+    'long int': SimTypeNum(DEFAULT_SIZES['long'], True),
+    'signed long int': SimTypeNum(DEFAULT_SIZES['long'], True),
+    'unsigned long int': SimTypeNum(DEFAULT_SIZES['long'], False),
 
-    'long long': SimTypeLongLong(True),
-    'signed long long': SimTypeLongLong(True),
-    'unsigned long long': SimTypeLongLong(False),
-    'long long int': SimTypeLongLong(True),
-    'signed long long int': SimTypeLongLong(True),
-    'unsigned long long int': SimTypeLongLong(False),
+    'long long' : SimTypeNum(DEFAULT_SIZES['long long'], True),
+    'signed long long': SimTypeNum(DEFAULT_SIZES['long long'], True),
+    'unsigned long long': SimTypeNum(DEFAULT_SIZES['long long'], False),
+    'long long int': SimTypeNum(DEFAULT_SIZES['long long'], True),
+    'signed long long int': SimTypeNum(DEFAULT_SIZES['long long'], True),
+    'unsigned long long int': SimTypeNum(DEFAULT_SIZES['long long'], False),
 
     'float': SimTypeFloat(),
     'double': SimTypeDouble(),
     'void': SimTypeBottom(),
 }
+
 
 ALL_TYPES = {
     'int8_t': SimTypeNum(8, True),
@@ -603,6 +604,9 @@ ALL_TYPES = {
 
 
 ALL_TYPES.update(BASIC_TYPES)
+
+def update_types(new_types):
+    ALL_TYPES.update(new_types)
 
 
 # this is a hack, pending https://github.com/eliben/pycparser/issues/187
