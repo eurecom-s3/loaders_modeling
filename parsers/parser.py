@@ -13,9 +13,9 @@ coloredlogs.install(level="DEBUG", logger=log)
 import ply.yacc as yacc
 
 # Get the token map from the lexer.  This is required.
-from langlex import tokens
+from .langlex import tokens
 from classes import Variable, Assignment, Expression, Condition, Immediate, BoolImmediate, ConditionList, ConditionListEntry, Loop, Input
-from z3_backend import dispatch
+from backends import dispatch
 
 variables = customdefdict(lambda x: Variable(x))
 conditions = {}

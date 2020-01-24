@@ -7,8 +7,8 @@ import pefile
 log = logging.getLogger(__name__)
 coloredlogs.install(level="INFO", logger=log)
 
-from parser import parser, statements
-from z3_backend import *
+from parsers import parser, statements
+from backends import *
 
 ftestcase = "testcase"
 
