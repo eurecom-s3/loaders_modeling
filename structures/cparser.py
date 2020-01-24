@@ -35,7 +35,6 @@ class SimType:
 
     _fields = ()
     _size = None
-    _can_refine_int = False
     base = True
 
     def __init__(self, label=None):
@@ -69,12 +68,6 @@ class SimType:
     def name(self):
         return repr(self)
 
-    def _refine_dir(self): # pylint: disable=no-self-use
-        return []
-
-    def _refine(self, view, k): # pylint: disable=unused-argument,no-self-use
-        raise KeyError("{} is not a valid refinement".format(k))
-
     @property
     def size(self):
         """
@@ -84,9 +77,6 @@ class SimType:
             return self._size
         return NotImplemented
 
-    def _init_str(self):
-        return "NotImplemented(%s)" % (self.__class__.__name__)
-
 
 class SimTypeBottom(SimType):
     """
@@ -95,9 +85,6 @@ class SimTypeBottom(SimType):
 
     def __repr__(self):
         return 'BOT'
-
-    def _init_str(self):
-        return "%s()" % self.__class__.__name__
 
 
 class SimTypeTop(SimType):
@@ -186,27 +173,6 @@ class SimTypeInt(SimTypeReg):
         except KeyError:
             raise ValueError(f"Type {self._base.name} unknown")
 
-    def _init_str(self):
-        return "%s(signed=%s, label=%s)" % (
-            self.__class__.__name__,
-            self.signed,
-            '"%s"' % self.label if self.label is not None else "None",
-        )
-
-    def _refine_dir(self):
-        return ['signed', 'unsigned']
-
-    def _refine(self, view, k):
-        if k == 'signed':
-            ty = copy.copy(self)
-            ty.signed = True
-        elif k == 'unsigned':
-            ty = copy.copy(self)
-            ty.signed = False
-        else:
-            raise KeyError(k)
-        return view._deeper(ty=ty)
-
 
 class SimTypeShort(SimTypeInt):
     _base_name = 'short'
@@ -241,9 +207,6 @@ class SimTypeChar(SimTypeReg):
 class SimTypeBool(SimTypeChar):
     def __repr__(self):
         return 'bool'
-
-    def _init_str(self):
-        return "%s()" % (self.__class__.__name__)
 
 
 class SimTypeFd(SimTypeReg):
@@ -289,14 +252,6 @@ class SimTypePointer(SimTypeReg):
     def size(self):
         return DEFAULT_BITS
 
-    def _init_str(self):
-        return "%s(%s, label=%s, offset=%d)" % (
-            self.__class__.__name__,
-            self.pts_to._init_str(),
-            '"%s"' % self.label if self.label is not None else "None",
-            self.offset
-        )
-
 
 class SimTypeFixedSizeArray(SimType):
     """
@@ -311,8 +266,6 @@ class SimTypeFixedSizeArray(SimType):
     def __repr__(self):
         return '{}[{}]'.format(self.elem_type, self.length)
 
-    _can_refine_int = True
-
     @property
     def size(self):
         return self.elem_type.size * self.length
@@ -320,13 +273,6 @@ class SimTypeFixedSizeArray(SimType):
     @property
     def alignment(self):
         return self.elem_type.alignment
-
-    def _init_str(self):
-        return "%s(%s, %d)" % (
-            self.__class__.__name__,
-            self.elem_type._init_str(),
-            self.length,
-        )
 
 
 class SimTypeArray(SimType):
@@ -376,11 +322,6 @@ class SimTypeString(SimTypeArray):
     def __repr__(self):
         return 'string_t'
 
-    _can_refine_int = True
-
-    def _refine(self, view, k):
-        return view._deeper(addr=view._addr + k, ty=SimTypeChar())
-
     @property
     def size(self):
         if self.length is None:
@@ -404,11 +345,6 @@ class SimTypeWString(SimTypeArray):
 
     def __repr__(self):
         return 'wstring_t'
-
-    _can_refine_int = True
-
-    def _refine(self, view, k):
-        return view._deeper(addr=view._addr + k * 2, ty=SimTypeNum(16, False))
 
     @property
     def size(self):
@@ -448,14 +384,6 @@ class SimTypeFunction(SimType):
     def size(self):
         return 4096     # ???????????
 
-    def _init_str(self):
-        return "%s([%s], %s, label=%s)" % (
-            self.__class__.__name__,
-            ", ".join([arg._init_str() for arg in self.args]),
-            self.returnty._init_str(),
-            self.label
-        )
-
 
 class SimTypeLength(SimTypeLong):
     """
@@ -483,12 +411,6 @@ class SimTypeLength(SimTypeLong):
     @property
     def size(self):
         return DEFAULT_BITS
-
-    def _init_str(self):
-        return "%s(size=%d)" % (
-            self.__class__.__name__,
-            self.size
-        )
 
 
 class SimTypeFloat(SimTypeReg):
@@ -518,12 +440,6 @@ class SimTypeDouble(SimTypeFloat):
     @property
     def alignment(self):
         return 8 if self.align_double else 4
-
-    def _init_str(self):
-        return "%s(align_double=%s)" % (
-            self.__class__.__name__,
-            self.align_double
-        )
 
 
 class SimStruct(SimType):
@@ -563,23 +479,6 @@ class SimStruct(SimType):
         if self._align is not None:
             return self._align
         return max(val.alignment for val in self.fields.values())
-
-    def _refine_dir(self):
-        return list(self.fields.keys())
-
-    def _refine(self, view, k):
-        offset = self.offsets[k]
-        ty = self.fields[k]
-        return view._deeper(ty=ty, addr=view._addr + offset)
-
-    def _init_str(self):
-        return "%s([%s], name=\"%s\", pack=%s, align=%s)" % (
-            self.__class__.__name__,
-            ", ".join([f._init_str() for f in self.fields]),
-            self._name,
-            self._pack,
-            self._align,
-        )
 
 
 class SimStructValue:
