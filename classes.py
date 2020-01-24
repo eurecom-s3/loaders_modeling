@@ -72,11 +72,13 @@ class BoolImmediate(Immediate):
 
 
 class Variable(object):
-    def __init__(self, name):
+    def __init__(self, name, type=None):
         self.name = name
+        self.type = type
 
     def __repr__(self):
-        return f"<Variable {self.name}>"
+        t = "" if not self.type else f" of type {self.type}"
+        return f"<Variable {self.name}{t}>"
 
 class Input(Statement):
     def __init__(self, var, size):

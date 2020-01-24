@@ -95,6 +95,17 @@ def p_load_stmt_2(p):
     'load_stmt : LOADTYPES VARIABLE'
     p[0] = (p[2], "DEFAULT")
 
+def p_input_stmt_type(p):
+    'input_stmt : INPUT VARIABLE NUMBER TYPE VARIABLE'
+    log.debug("Input statement")
+    t = p[5]
+    if t not in loaded_types:
+        log.warning(f"Unknown type {t}. Defaulting to untyped variable")
+        var = (Variable(p[2]), p[3])
+    else:
+        var = (Variable(p[2], loaded_types[t]), p[3])
+    p[0] = var
+
 def p_input_stmt(p):
     'input_stmt : INPUT VARIABLE NUMBER'
     log.debug("Input statement")
@@ -148,7 +159,26 @@ def p_loopend_stmt(p):
     'loopend_stmt : LOOPEND'
     p[0] = (p[1], )
 
-def p_assignment(p):
+def p_assignment_typed(p):
+    'assignment : VARIABLE ARROW expression TYPE VARIABLE'
+    var = None
+    t = p[5]
+    if t not in loaded_types:
+        log.warning(f"Unknown type {t}. Defaulting to untyped assignement")
+        return p_assignment_untyped(p)
+
+    t = loaded_types[t]
+    if p[1] not in variables:
+        log.debug(f"New variable found {p[1]} of type {t}")
+        var = Variable(p[1], t)
+        variables[var.name] = var
+    else:
+        var = variables[p[1]]
+        if t != var.type:
+            log.warning(f"Variable {var.name} already declared as {var.type}. Cannot convert it as {t}. Leaving it typed as {var.type}.")
+    p[0] = Assignment(var, p[3])
+
+def p_assignment_untyped(p):
     'assignment : VARIABLE ARROW expression'
     var = None
     if p[1] not in variables:
@@ -214,6 +244,25 @@ def p_expression_indexing(p):
     p1 = p[1]
     p3 = p[3]
     p[0] = Expression('Index', p1, p3)
+
+def p_expression_struct_access(p):
+    'expression : VARIABLE DOT VARIABLE'
+    varname = p[1]
+    if varname not in variables:
+        log.error(f"Unknown varaible {varname}.")
+        raise ValueError
+    var = variables[p[1]]
+    if var.type is None:
+        log.error(f"Variable {varname} is untyped. Cannot access sub-fields.")
+        raise ValueError
+    field = p[3]
+    if field not in var.type.fields:
+        log.error(f"Variable of type {var.type} does not have any field named {field}")
+        raise ValueError
+    field_off = var.type.offsets[field]
+    field_size = var.type.fields[field].size // 8
+    log.debug(f"Struct access: {var}.{field} --> Slice({var}, {field_off}, {field_size}).")
+    p[0] = Expression('Slice', Expression("VAR", var), field_off, field_size)
 
 def p_expression_variable(p):
     'expression : VARIABLE'

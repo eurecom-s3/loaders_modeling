@@ -27,6 +27,7 @@ tokens = (
     'COLON',
     'SEMICOLON',
     'EXCLAMATION',
+    'DOT',
     'TERMINATOR',
 
     # slicing
@@ -83,19 +84,20 @@ def t_TERMINATOR(t):
     log.debug("Terminal condition token")
     return t
 
-t_LBRACKETS  = r'\['
-t_RBRACKETS  = r'\]'
-t_LPAREN     = r'\('
-t_RPAREN     = r'\)'
-t_ARROW      = r'<-'
-t_COLON      = r':'
-t_SEMICOLON  = r';'
-t_EXCLAMATION= r'!'
-t_COMMA      = r','
-t_NEWLINE    = r'\n'
+t_LBRACKETS   = r'\['
+t_RBRACKETS   = r'\]'
+t_LPAREN      = r'\('
+t_RPAREN      = r'\)'
+t_ARROW       = r'<-'
+t_COLON       = r':'
+t_SEMICOLON   = r';'
+t_EXCLAMATION = r'!'
+t_DOT         = r'\.'
+t_COMMA       = r','
+t_NEWLINE     = r'\n'
 
 def t_INPUT(t):
-    r'(INPUT|input)'
+    r'(INPUT|input)\s'
     log.debug("Input variable token")
     return t
 
@@ -141,7 +143,7 @@ def t_LOADTYPES(t):
     return t
 
 def t_TYPE(t):
-    r'\s(AS|As|as)\s'
+    r'(AS|As|as)\s'
     return t
 
 def t_VARIABLE(t):
