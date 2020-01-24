@@ -23,6 +23,7 @@ block_stack = deque()
 input_name = None
 
 statements = []
+loaded_types = {}
 
 def p_input(p):
     'input : input NEWLINE'
@@ -74,6 +75,25 @@ def p_input_loopend(p):
         raise ValueError
     log.debug("Loop end " + str(p[1][0]))
     statements.append(loop)
+
+def p_input_load(p):
+    'input : load_stmt'
+    os = p[1][1]
+    header = p[1][0]
+    module_name = 'structures.' + (os if os != "DEFAULT" else "cparser")
+    module = __import__(module_name, globals(), locals(), ['parse_file'])
+    with open(f"structures/headers/{header}.h", "r") as fp:
+        new_types = module.parse_file(fp.read())
+    log.debug(f"Loaded {len(new_types[1])} new types.")
+    loaded_types.update(new_types[1])
+
+def p_load_stmt(p):
+    'load_stmt : LOADTYPES VARIABLE VARIABLE'
+    p[0] = (p[2], p[3])
+
+def p_load_stmt_2(p):
+    'load_stmt : LOADTYPES VARIABLE'
+    p[0] = (p[2], "DEFAULT")
 
 def p_input_stmt(p):
     'input_stmt : INPUT VARIABLE NUMBER'

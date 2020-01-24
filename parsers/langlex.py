@@ -47,7 +47,10 @@ tokens = (
     'CHAR',
     'BOOL',
     'VARIABLE',
-    'INPUT'
+    'INPUT',
+
+    'LOADTYPES',
+    'TYPE',
 )
 
 def t_Z3OPERATOR1(t):
@@ -131,6 +134,14 @@ def t_LOOP(t):
 def t_CONDITIONNAME(t):
     r'(V|v)\d+'
     log.debug("Condition name token")
+    return t
+
+def t_LOADTYPES(t):
+    r'(LOAD|Load|load)\s'
+    return t
+
+def t_TYPE(t):
+    r'\s(AS|As|as)\s'
     return t
 
 def t_VARIABLE(t):

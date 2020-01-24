@@ -1,4 +1,4 @@
-from cparser import *
+from .cparser import *
 
 DEFAULT_SIZES = {
     'char'      : 8,
