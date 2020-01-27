@@ -136,7 +136,7 @@ class Assignment(Statement):
         return len(self._conditions) != 0
 
 class Loop(Statement):
-    def __init__(self, loop_name, output_name, input_var, startpos, structsize, count, maxunroll):
+    def __init__(self, loop_name, output_name, input_var, startpos, structsize, count, maxunroll, vtype=None):
         self._loop_name = loop_name
         self.output_name = output_name
         if not isinstance(input_var, Expression):
@@ -160,6 +160,7 @@ class Loop(Statement):
         self.maxunroll = maxunroll
         self.structsize = structsize
         self._statements = []
+        self.vtype = vtype
 
     def add_statement(self, stmt):
         if not isinstance(stmt, Statement):

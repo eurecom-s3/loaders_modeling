@@ -65,6 +65,7 @@ def p_input_loopstart(p):
     loop = p[1][1]
     block_stack.append(loop)
     var = variables[loop.output_name]
+    var.type = loop.vtype
     input_var = loop.input_var
 
 def p_input_loopend(p):
@@ -128,12 +129,12 @@ def p_assignment_stmt_cond(p):
     p[0] = assignement
 
 def p_condition_stmt_uncond(p):
-    'condition_stmt : CONDITIONSTART COLON conditionexpr'
+    'condition_stmt : CONDITIONNAME COLON conditionexpr'
     p[3].name = p[1]
     p[0] = (p[1], p[3])
 
 def p_condition_stmt_cond(p):
-    'condition_stmt : CONDITIONSTART conditionlist COLON conditionexpr'
+    'condition_stmt : CONDITIONNAME conditionlist COLON conditionexpr'
     cond = p[4]
     cond.name = p[1]
     conditionslist = p[2]
@@ -142,18 +143,41 @@ def p_condition_stmt_cond(p):
     p[0] = (p[1], cond)
 
 def p_condition_stmt_noexpr(p):
-    'condition_stmt : CONDITIONSTART conditionlist SEMICOLON'
+    'condition_stmt : CONDITIONNAME conditionlist SEMICOLON'
     conditionslist = p[2]
     conds = [conditions[c] for c in conditionslist.names]
     cond = Condition(True, False, conds)
     p[0] = (p[1], cond)
 
+def p_loopstart_stmt_typed(p):
+    'loopstart_stmt : loopstart TYPE VARIABLE'
+    t = p[3]
+    if t not in loaded_types:
+        raise TypeError(f"Unknown type {t}")
+    loop = p[1]
+    loop[1].vtype = loaded_types[t]
+    p[0] = loop
+
+def p_loopstart_stmt_untyped(p):
+    'loopstart_stmt : loopstart'
+    p[0] = p[1]
 
 def p_loopstart_stmt(p):
-    'loopstart_stmt : LOOPSTART COLON VARIABLE ARROW LOOP LPAREN expression COMMA expression COMMA NUMBER COMMA expression COMMA NUMBER RPAREN'
+    'loopstart : LOOPSTART COLON VARIABLE ARROW LOOP LPAREN expression COMMA expression COMMA NUMBER COMMA expression COMMA NUMBER RPAREN'
     loopindex = p[1]
     loop = Loop(p[1], p[3], p[7], p[9], p[11], p[13], p[15])
     p[0] = (loopindex, loop)
+
+def p_loopstart_stmt_2(p):
+    'loopstart : LOOPSTART COLON VARIABLE ARROW LOOP LPAREN expression COMMA expression COMMA expression COMMA expression COMMA NUMBER RPAREN'
+    loopindex = p[1]
+    structsize = p[11]
+    if structsize.opcode != "IMM":
+        raise ValueError("Struct size must be a number")
+    structsize = structsize.operands[0].value
+    loop = Loop(p[1], p[3], p[7], p[9], structsize, p[13], p[15])
+    p[0] = (loopindex, loop)
+
 
 def p_loopend_stmt(p):
     'loopend_stmt : LOOPEND'
@@ -263,6 +287,14 @@ def p_expression_struct_access(p):
     field_size = var.type.fields[field].size // 8
     log.debug(f"Struct access: {var}.{field} --> Slice({var}, {field_off}, {field_size}).")
     p[0] = Expression('Slice', Expression("VAR", var), field_off, field_size)
+
+def p_expression_sizeof(p):
+    'expression : SIZEOF VARIABLE'
+    typename = p[2]
+    if typename not in loaded_types:
+        raise TypeError(f"Unknown type {typename}")
+    size = loaded_types[typename].size
+    p[0] = Expression("IMM", Immediate(size))
 
 def p_expression_variable(p):
     'expression : VARIABLE'

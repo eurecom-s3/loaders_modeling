@@ -52,6 +52,7 @@ tokens = (
 
     'LOADTYPES',
     'TYPE',
+    'SIZEOF'
 )
 
 def t_Z3OPERATOR1(t):
@@ -107,14 +108,8 @@ def t_ASSIGNSTART(t):
     t.value = t.value.lstrip()
     return t
 
-def t_CONDITIONSTART(t):
-    r'^(    )*(V|v)\d+'
-    log.debug("Condition start token")
-    t.value = t.value.lstrip()
-    return t
-
 def t_LOOPSTART(t):
-    r'^(    )*(L|l)\d+'
+    r'^\s*(L|l)\d+'
     log.debug("Loop start token")
     v = t.value.lstrip()
     v = int(v[1:])
@@ -144,6 +139,10 @@ def t_LOADTYPES(t):
 
 def t_TYPE(t):
     r'(AS|As|as)\s'
+    return t
+
+def t_SIZEOF(t):
+    r'(SIZEOF|SizeOf|sizeof)\s'
     return t
 
 def t_VARIABLE(t):
