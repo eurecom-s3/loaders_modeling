@@ -62,7 +62,7 @@ def t_Z3OPERATOR1(t):
     return t
 
 def t_Z3OPERATOR2(t):
-    r"(ADD|SUB|UDIV|AND|OR|ULE|UGE|ULT|UGT|Add|Sub|UDiv|And|Or|ULe|UGe|ULt|UGt|BITAND|BITAnd|BitAnd|BITOR|BITOr|BitOr|LE|Le|GE|Ge|NEQ|NEq|EQ|Eq|LT|Lt|GT|Gt|INT|Int|MOD|Mod|MUL|Mul)\s"
+    r"(ADD|SUB|DIV|UDIV|AND|OR|ULE|UGE|ULT|UGT|Add|Sub|Div|UDiv|And|Or|ULe|UGe|ULt|UGt|BITAND|BITAnd|BitAnd|BITOR|BITOr|BitOr|LE|Le|GE|Ge|NEQ|NEq|EQ|Eq|LT|Lt|GT|Gt|INT|Int|MOD|Mod|MUL|Mul)\s"
     log.debug("OPERATOR2 token")
     t.value = t.value[:-1].upper()
     return t

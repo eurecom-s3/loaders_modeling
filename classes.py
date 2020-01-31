@@ -20,6 +20,7 @@ class Expression(Base):
                'ADD'    : 2,
                'SUB'    : 2,
                'MUL'    : 2,
+               'DIV'    : 2,
                'UDIV'   : 2,
                'MOD'    : 2,
                'AND'    : 2,

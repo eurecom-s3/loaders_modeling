@@ -25,6 +25,9 @@ def MUL(a, b):
 def MOD(a, b):
     return a % b
 
+def DIV(a, b):
+    return a / b
+
 def EQ(a, b):
     return a == b
 
@@ -85,6 +88,7 @@ def VAR(var):
 z3_funcs = {'ADD'   : z3.Sum,
             'SUB'   : SUB,
             'MUL'   : MUL,
+            'DIV'   : DIV,
             'UDIV'  : z3.UDiv,
             'MOD'   : MOD,
             'AND'   : z3.And,
