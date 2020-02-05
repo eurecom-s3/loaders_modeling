@@ -144,7 +144,7 @@ def p_constant_define(p):
     if name not in defines:
         log.error(f"{name} not defined as a constant")
         raise ValueError
-    p[0] = defines[name].operands[0]
+    p[0] = defines[name].operands[0].value
 
 def p_assignment_stmt_uncond(p):
     'assignment_stmt : ASSIGNSTART COLON assignment'

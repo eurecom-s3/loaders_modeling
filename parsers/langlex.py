@@ -63,7 +63,7 @@ def t_Z3OPERATOR1(t):
     return t
 
 def t_Z3OPERATOR2(t):
-    r"(ADD|SUB|DIV|UDIV|AND|OR|ULE|UGE|ULT|UGT|Add|Sub|Div|UDiv|And|Or|ULe|UGe|ULt|UGt|BITAND|BITAnd|BitAnd|BITOR|BITOr|BitOr|LE|Le|GE|Ge|NEQ|NEq|EQ|Eq|LT|Lt|GT|Gt|INT|Int|MOD|Mod|MUL|Mul)\s"
+    r"(ADD|SUB|DIV|UDIV|AND|OR|ULE|UGE|ULT|UGT|Add|Sub|Div|UDiv|And|Or|ULe|UGe|ULt|UGt|BITAND|BITAnd|BitAnd|BITOR|BITOr|BitOr|LE|Le|GE|Ge|NEQ|NEq|Neq|EQ|Eq|LT|Lt|GT|Gt|INT|Int|MOD|Mod|MUL|Mul)\s"
     log.debug("OPERATOR2 token")
     t.value = t.value[:-1].upper()
     return t
@@ -91,26 +91,29 @@ t_RBRACKETS   = r'\]'
 t_LPAREN      = r'\('
 t_RPAREN      = r'\)'
 t_ARROW       = r'<-'
-t_COLON       = r':'
 t_SEMICOLON   = r';'
 t_EXCLAMATION = r'!'
 t_DOT         = r'\.'
 t_COMMA       = r','
 t_NEWLINE     = r'\n'
 
+def t_COLON(t):
+    r':'
+    return t
+
 def t_INPUT(t):
-    r'(INPUT|input)\s'
+    r'(?m)^(INPUT|input)\s'
     log.debug("Input variable token")
     return t
 
 def t_ASSIGNSTART(t):
-    r'^(    )*(P|p)'
+    r'^\s*(P|p)(?=(:|\())'
     log.debug("Assignement start token")
     t.value = t.value.lstrip()
     return t
 
 def t_LOOPSTART(t):
-    r'^\s*(L|l)\d+'
+    r'(?m)^\s*(L|l)\d+'
     log.debug("Loop start token")
     v = t.value.lstrip()
     v = int(v[1:])
@@ -118,7 +121,7 @@ def t_LOOPSTART(t):
     return t
 
 def t_LOOPEND(t):
-    r'^(    )*(END|End|end)\s+(L|l)\d+'
+    r'(?m)^(    )*(END|End|end)\s+(L|l)\d+'
     log.debug("Loop end token")
     v = t.value.lstrip()
     v = int(v[5:])
