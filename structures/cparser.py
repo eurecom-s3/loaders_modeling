@@ -693,6 +693,25 @@ def register_types(types):
     else:
         ALL_TYPES.update(types)
 
+def preprocess_defs(defn):
+    from pycparser.ply import lex, cpp
+    lexer = lex.lex(cpp)
+    p = cpp.Preprocessor(lexer)
+    list(p.parsegen(defn))
+    defs = {x: y.value[0].value for x, y in p.macros.items() if not x.startswith("__")}
+    ret = {}
+    for x, y in defs.items():
+        v = None
+        if y.isnumeric():
+            try:
+                v = int(y)
+            except ValueError:
+                v = int(y, 16)
+        elif len(y) == 1:
+            v = ord(y)
+        if v is not None:
+            ret[x] = v
+    return ret
 
 def do_preprocess(defn):
     """

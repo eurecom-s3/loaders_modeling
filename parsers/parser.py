@@ -14,11 +14,12 @@ import ply.yacc as yacc
 
 # Get the token map from the lexer.  This is required.
 from .langlex import tokens
-from classes import Variable, Assignment, Expression, Condition, Immediate, BoolImmediate, ConditionList, ConditionListEntry, Loop, Input
+from classes import Variable, Assignment, Expression, Condition, Immediate, BoolImmediate, ConditionList, ConditionListEntry, Loop, Input, Define
 from backends import dispatch
 
 variables = customdefdict(lambda x: Variable(x))
 conditions = {}
+defines = {}
 block_stack = deque()
 input_name = None
 
@@ -77,6 +78,18 @@ def p_input_loopend(p):
     log.debug("Loop end " + str(p[1][0]))
     statements.append(loop)
 
+def p_input_define(p):
+    'input : define_stmt'
+    stmt = p[1]
+    if stmt.name in variables:
+        log.warning(f"Defining constant {stmt.name}, but a variable with the same name already declared. Skipping")
+    else:
+        defines[stmt.name] = stmt.value
+
+def p_define_stmt(p):
+    'define_stmt : DEFINE VARIABLE expression'
+    p[0] = Define(p[2], p[3])
+
 def p_input_load(p):
     'input : load_stmt'
     os = p[1][1]
@@ -84,20 +97,28 @@ def p_input_load(p):
     module_name = 'structures.' + (os if os != "DEFAULT" else "cparser")
     module = __import__(module_name, globals(), locals(), ['parse_file'])
     with open(f"structures/headers/{header}.h", "r") as fp:
-        new_types = module.parse_file(fp.read())
-    log.debug(f"Loaded {len(new_types[1])} new types.")
+        fcontent = fp.read()
+
+    new_types = module.parse_file(fcontent)
+    new_defs = module.preprocess_defs(fcontent)
     loaded_types.update(new_types[1])
+    new_defs = {x: Expression("IMM", y) for x, y in new_defs.items()}
+    defines.update(new_defs)
 
 def p_load_stmt(p):
     'load_stmt : LOADTYPES VARIABLE VARIABLE'
-    p[0] = (p[2], p[3])
+    if p[3] == 'linux':
+        os = 'DEFAULT'
+    else:
+        os = p[3]
+    p[0] = (p[2], os)
 
 def p_load_stmt_2(p):
     'load_stmt : LOADTYPES VARIABLE'
     p[0] = (p[2], "DEFAULT")
 
 def p_input_stmt_type(p):
-    'input_stmt : INPUT VARIABLE NUMBER TYPE VARIABLE'
+    'input_stmt : INPUT VARIABLE constant TYPE VARIABLE'
     log.debug("Input statement")
     t = p[5]
     if t not in loaded_types:
@@ -108,10 +129,22 @@ def p_input_stmt_type(p):
     p[0] = var
 
 def p_input_stmt(p):
-    'input_stmt : INPUT VARIABLE NUMBER'
+    'input_stmt : INPUT VARIABLE constant'
     log.debug("Input statement")
     var = (Variable(p[2]), p[3])
     p[0] = var
+
+def p_constant_number(p):
+    'constant : NUMBER'
+    p[0] = p[1]
+
+def p_constant_define(p):
+    'constant : VARIABLE'
+    name = p[1]
+    if name not in defines:
+        log.error(f"{name} not defined as a constant")
+        raise ValueError
+    p[0] = defines[name].operands[0]
 
 def p_assignment_stmt_uncond(p):
     'assignment_stmt : ASSIGNSTART COLON assignment'
@@ -300,10 +333,14 @@ def p_expression_variable(p):
     'expression : VARIABLE'
     log.debug("Found variable " + p[1])
     varname = p[1]
-    if varname not in variables:
+    if varname not in variables and varname not in defines:
         log.critical("Using variable %s before assignement" % varname)
         raise NameError
-    p[0] = Expression("VAR", variables[varname])
+
+    if varname in variables:
+        p[0] = Expression("VAR", variables[varname])
+    else:
+        p[0] = defines[varname]
 
 def p_expression_number(p):
     'expression : NUMBER'

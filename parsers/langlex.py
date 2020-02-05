@@ -52,7 +52,8 @@ tokens = (
 
     'LOADTYPES',
     'TYPE',
-    'SIZEOF'
+    'SIZEOF',
+    'DEFINE',
 )
 
 def t_Z3OPERATOR1(t):
@@ -145,8 +146,12 @@ def t_SIZEOF(t):
     r'(SIZEOF|SizeOf|sizeof)\s'
     return t
 
+def t_DEFINE(t):
+    r'(DEFINE| Define| define)\s'
+    return t
+
 def t_VARIABLE(t):
-    r"[a-zA-Z_]+"
+    r"[a-zA-Z_][a-zA-Z_0-9]+"
     return t
 
 # A regular expression rule with some action code

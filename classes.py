@@ -236,6 +236,18 @@ class Condition(Statement):
         new.name = self.name
         return new
 
+class Define(Statement):
+    def __init__(self, name, value):
+        if not isinstance(value, Expression):
+            t = type(value)
+            log.error(f"value expected to be of type Expression. {t} found instead")
+            raise TypeError
+        if value.opcode != 'IMM':
+            log.error(f"Value must be an immediate expression. {value.opcode} found instead")
+            raise TypeError
+        self.name = name
+        self.value = value
+
 class ConditionListEntry(Base):
     def __init__(self, name, negated=False):
         self.name = name
