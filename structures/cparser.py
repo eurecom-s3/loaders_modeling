@@ -600,6 +600,27 @@ ALL_TYPES = {
 
     'string': SimTypeString(),
     'wstring': SimTypeWString(),
+
+    'u8': SimTypeNum(8, False),
+    '__u8': SimTypeNum(8, False),
+    's8': SimTypeNum(8, True),
+    '__s8': SimTypeNum(8, True),
+
+    'u16': SimTypeNum(16, False),
+    '__u16': SimTypeNum(16, False),
+    's16': SimTypeNum(16, True),
+    '__s16': SimTypeNum(16, True),
+
+    'u32': SimTypeNum(32, False),
+    '__u32': SimTypeNum(32, False),
+    's32': SimTypeNum(32, True),
+    '__s32': SimTypeNum(32, True),
+
+    'u64': SimTypeNum(64, False),
+    '__u64': SimTypeNum(64, False),
+    's64': SimTypeNum(64, True),
+    '__s64': SimTypeNum(64, True),
+
 }
 
 
