@@ -10,178 +10,180 @@ log = logging.getLogger(__name__)
 log.setLevel(logging.DEBUG)
 
 
-tokens = (
-    'NEWLINE',
+class Lexer:
+    tokens = (
+        'NEWLINE',
 
-    # these translate to z3 functions
-    'Z3OPERATOR1',
-    'Z3OPERATOR2',
+        # these translate to z3 functions
+        'Z3OPERATOR1',
+        'Z3OPERATOR2',
 
-    'ASSIGNSTART',
-    'CONDITIONSTART',
-    'CONDITIONNAME',
-    'LOOPSTART',
-    'LOOPEND',
-    'LOOP',
-    'COMMA',
-    'COLON',
-    'SEMICOLON',
-    'EXCLAMATION',
-    'DOT',
-    'TERMINATOR',
+        'ASSIGNSTART',
+        'CONDITIONSTART',
+        'CONDITIONNAME',
+        'LOOPSTART',
+        'LOOPEND',
+        'LOOP',
+        'COMMA',
+        'COLON',
+        'SEMICOLON',
+        'EXCLAMATION',
+        'DOT',
+        'TERMINATOR',
 
-    # slicing
-    'LBRACKETS',
-    'RBRACKETS',
+        # slicing
+        'LBRACKETS',
+        'RBRACKETS',
 
-    # parentheses
-    'LPAREN',
-    'RPAREN',
+        # parentheses
+        'LPAREN',
+        'RPAREN',
 
-    # ->
-    'ARROW',
+        # ->
+        'ARROW',
 
-    # #
-    'COMMENT',
+        # #
+        'COMMENT',
 
-    'NUMBER',
-    'CHAR',
-    'BOOL',
-    'VARIABLE',
-    'INPUT',
+        'NUMBER',
+        'CHAR',
+        'BOOL',
+        'VARIABLE',
+        'INPUT',
 
-    'LOADTYPES',
-    'TYPE',
-    'SIZEOF',
-    'DEFINE',
-)
+        'LOADTYPES',
+        'TYPE',
+        'SIZEOF',
+        'DEFINE',
+    )
 
-def t_Z3OPERATOR1(t):
-    r'(NOT|Not|BITNOT|BITNot|BitNot|ISPOW2|IsPow2|isPow2)'
-    t.value = t.value.upper()
-    log.debug("OPERATOR1 token")
-    return t
+    def t_Z3OPERATOR1(self, t):
+        r'(NOT|Not|BITNOT|BITNot|BitNot|ISPOW2|IsPow2|isPow2)'
+        t.value = t.value.upper()
+        log.debug("OPERATOR1 token")
+        return t
 
-def t_Z3OPERATOR2(t):
-    r"(ADD|SUB|DIV|UDIV|AND|OR|ULE|UGE|ULT|UGT|Add|Sub|Div|UDiv|And|Or|ULe|UGe|ULt|UGt|BITAND|BITAnd|BitAnd|BITOR|BITOr|BitOr|LE|Le|GE|Ge|NEQ|NEq|Neq|EQ|Eq|LT|Lt|GT|Gt|INT|Int|MOD|Mod|MUL|Mul)\s"
-    log.debug("OPERATOR2 token")
-    t.value = t.value[:-1].upper()
-    return t
+    def t_Z3OPERATOR2(self, t):
+        r"(ADD|SUB|DIV|UDIV|AND|OR|ULE|UGE|ULT|UGT|Add|Sub|Div|UDiv|And|Or|ULe|UGe|ULt|UGt|BITAND|BITAnd|BitAnd|BITOR|BITOr|BitOr|LE|Le|GE|Ge|NEQ|NEq|Neq|EQ|Eq|LT|Lt|GT|Gt|INT|Int|MOD|Mod|MUL|Mul)\s"
+        log.debug("OPERATOR2 token")
+        t.value = t.value[:-1].upper()
+        return t
 
-def t_CHAR(t):
-    r'"[^"]"'
-    t.value = ord(t.value[1])
-    log.debug("A single char value token")
-    return t
+    def t_CHAR(self, t):
+        r'"[^"]"'
+        t.value = ord(t.value[1])
+        log.debug("A single char value token")
+        return t
 
-def t_BOOL(t):
-    r"(TRUE|True|true|FALSE|False|false)"
-    val = t.value.upper()
-    t.value = True if val == "TRUE" else False
-    log.debug(f"Found immediate boolean value {val}")
-    return t
+    def t_BOOL(self, t):
+        r"(TRUE|True|true|FALSE|False|false)"
+        val = t.value.upper()
+        t.value = True if val == "TRUE" else False
+        log.debug(f"Found immediate boolean value {val}")
+        return t
 
-def t_TERMINATOR(t):
-    r"term"
-    log.debug("Terminal condition token")
-    return t
+    def t_TERMINATOR(self, t):
+        r"term"
+        log.debug("Terminal condition token")
+        return t
 
-t_LBRACKETS   = r'\['
-t_RBRACKETS   = r'\]'
-t_LPAREN      = r'\('
-t_RPAREN      = r'\)'
-t_ARROW       = r'<-'
-t_SEMICOLON   = r';'
-t_EXCLAMATION = r'!'
-t_DOT         = r'\.'
-t_COMMA       = r','
-t_NEWLINE     = r'\n'
+    t_LBRACKETS   = r'\['
+    t_RBRACKETS   = r'\]'
+    t_LPAREN      = r'\('
+    t_RPAREN      = r'\)'
+    t_ARROW       = r'<-'
+    t_SEMICOLON   = r';'
+    t_EXCLAMATION = r'!'
+    t_DOT         = r'\.'
+    t_COMMA       = r','
+    t_NEWLINE     = r'\n'
 
-def t_COLON(t):
-    r':'
-    return t
+    def t_COLON(self, t):
+        r':'
+        return t
 
-def t_INPUT(t):
-    r'(?m)^(INPUT|input)\s'
-    log.debug("Input variable token")
-    return t
+    def t_INPUT(self, t):
+        r'(?m)^(INPUT|input)\s'
+        log.debug("Input variable token")
+        return t
 
-def t_ASSIGNSTART(t):
-    r'^\s*(P|p)(?=(:|\())'
-    log.debug("Assignement start token")
-    t.value = t.value.lstrip()
-    return t
+    def t_ASSIGNSTART(self, t):
+        r'^\s*(P|p)(?=(:|\())'
+        log.debug("Assignement start token")
+        t.value = t.value.lstrip()
+        return t
 
-def t_LOOPSTART(t):
-    r'(?m)^\s*(L|l)\d+'
-    log.debug("Loop start token")
-    v = t.value.lstrip()
-    v = int(v[1:])
-    t.value = v
-    return t
+    def t_LOOPSTART(self, t):
+        r'(?m)^\s*(L|l)\d+'
+        log.debug("Loop start token")
+        v = t.value.lstrip()
+        v = int(v[1:])
+        t.value = v
+        return t
 
-def t_LOOPEND(t):
-    r'(?m)^(    )*(END|End|end)\s+(L|l)\d+'
-    log.debug("Loop end token")
-    v = t.value.lstrip()
-    v = int(v[5:])
-    t.value = v
-    return t
+    def t_LOOPEND(self, t):
+        r'(?m)^(    )*(END|End|end)\s+(L|l)\d+'
+        log.debug("Loop end token")
+        v = t.value.lstrip()
+        v = int(v[5:])
+        t.value = v
+        return t
 
-def t_LOOP(t):
-    r'LOOP'
-    return t
+    def t_LOOP(self, t):
+        r'LOOP'
+        return t
 
-def t_CONDITIONNAME(t):
-    r'(V|v)\d+'
-    log.debug("Condition name token")
-    return t
+    def t_CONDITIONNAME(self, t):
+        r'(V|v)\d+'
+        log.debug("Condition name token")
+        return t
 
-def t_LOADTYPES(t):
-    r'(LOAD|Load|load)\s'
-    return t
+    def t_LOADTYPES(self, t):
+        r'(LOAD|Load|load)\s'
+        return t
 
-def t_TYPE(t):
-    r'(AS|As|as)\s'
-    return t
+    def t_TYPE(self, t):
+        r'(AS|As|as)\s'
+        return t
 
-def t_SIZEOF(t):
-    r'(SIZEOF|SizeOf|sizeof)\s'
-    return t
+    def t_SIZEOF(self, t):
+        r'(SIZEOF|SizeOf|sizeof)\s'
+        return t
 
-def t_DEFINE(t):
-    r'(DEFINE| Define| define)\s'
-    return t
+    def t_DEFINE(self, t):
+        r'(DEFINE| Define| define)\s'
+        return t
 
-def t_VARIABLE(t):
-    r"[a-zA-Z_][a-zA-Z_0-9]+"
-    return t
+    def t_VARIABLE(self, t):
+        r"[a-zA-Z_][a-zA-Z_0-9]+"
+        return t
 
-# A regular expression rule with some action code
-def t_NUMBER(t):
-    r'(0(x|X)[a-fA-F0-9]+|\d+)'
-    log.debug("Number token")
-    try:
-        t.value = int(t.value)
-    except ValueError:
-        t.value = int(t.value, 16)
-    return t
+    # A regular expression rule with some action code
+    def t_NUMBER(self, t):
+        r'(0(x|X)[a-fA-F0-9]+|\d+)'
+        log.debug("Number token")
+        try:
+            t.value = int(t.value)
+        except ValueError:
+            t.value = int(t.value, 16)
+        return t
 
-t_ignore_comments = r'\#.*'
+    t_ignore_comments = r'\#.*'
 
-# Define a rule so we can track line numbers
-def t_newline(t):
-    r'\n+'
-    log.debug("New line found")
-    t.lexer.lineno += len(t.value)
+    # Define a rule so we can track line numbers
+    def t_newline(self, t):
+        r'\n+'
+        log.debug("New line found")
+        t.lexer.lineno += len(t.value)
 
-# A string containing ignored characters (spaces and tabs)
-t_ignore  = ' \t'
+    # A string containing ignored characters (spaces and tabs)
+    t_ignore  = ' \t'
 
-# Error handling rule
-def t_error(t):
-    print("Illegal character '%s'" % t.value[0])
-    t.lexer.skip(1)
+    # Error handling rule
+    def t_error(self, t):
+        print("Illegal character '%s'" % t.value[0])
+        t.lexer.skip(1)
 
-# Build the lexer
-lexer = lex.lex()
+    def __init__(self):
+        # Build the lexer
+        lexer = lex.lex(module=self)
