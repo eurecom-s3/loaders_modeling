@@ -123,7 +123,9 @@ class Parser:
         header = p[1][0]
         module_name = 'structures.' + (os if os != "DEFAULT" else "cparser")
         module = __import__(module_name, globals(), locals(), ['parse_file'])
-        with open(f"structures/headers/{header}.h", "r") as fp:
+        dirpath = self._cwd if use_cwd else "structures/headers"
+        header_file = dirpath + f"/{header}.h"
+        with open(header_file, "r") as fp:
             fcontent = fp.read()
 
         new_types = module.parse_file(fcontent)
