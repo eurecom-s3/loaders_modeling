@@ -6,7 +6,7 @@ from collections import OrderedDict, defaultdict
 import copy
 import re
 import logging
-
+import string
 
 l = logging.getLogger(name=__name__)
 
@@ -722,12 +722,12 @@ def preprocess_defs(defn):
     defs = {x: y.value[0].value for x, y in p.macros.items() if not x.startswith("__")}
     ret = {}
     for x, y in defs.items():
+        y = y.strip("'").strip('"')
         v = None
         if y.isnumeric():
-            try:
-                v = int(y)
-            except ValueError:
-                v = int(y, 16)
+            v = int(y)
+        elif y.startswith("0x") and all(c in string.hexdigits for c in y[2:]):
+            v = int(y, 16)
         elif len(y) == 1:
             v = ord(y)
         if v is not None:
@@ -927,7 +927,10 @@ def _decl_to_type(decl, extra_types=None):
         else:
             raise TypeError("Unknown type '%s'" % ' '.join(key))
 
-    raise ValueError("Unknown type!")
+    elif isinstance(decl, pycparser.c_ast.Enum):
+        return None
+
+    raise ValueError(f"Unknown type! {decl}, {type(decl)}")
 
 
 def _parse_const(c):
