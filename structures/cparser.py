@@ -949,6 +949,7 @@ def _parse_const(c):
     else:
         raise ValueError(c)
 
+
 if pycparser is not None:
     _accepts_scope_stack()
 
@@ -968,3 +969,11 @@ struct timeval {
 """))
 except ImportError:
     pass
+
+if __name__ == "__main__":
+    import sys
+    f = sys.argv[1]
+    with open(f, "r") as fp:
+        content = fp.read()
+    _, new_types = parse_file(content)
+    new_defs = preprocess_defs(content)
