@@ -52,6 +52,10 @@ class Parser:
     def statements(self):
         return statements
 
+    @property
+    def conditions(self):
+        return conditions
+
     def p_input(self, p):
         'input : input NEWLINE'
         p[0] = p[1]
