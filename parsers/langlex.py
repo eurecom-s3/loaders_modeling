@@ -103,18 +103,18 @@ class Lexer:
         return t
 
     def t_INPUT(self, t):
-        r'(?m)^(INPUT|input)\s'
+        r'^(INPUT|input)'
         log.debug("Input variable token")
         return t
 
     def t_ASSIGNSTART(self, t):
-        r'^\s*(P|p)(?=(:|\())'
+        r'(P|p)(?=(:|\())'
         log.debug("Assignement start token")
         t.value = t.value.lstrip()
         return t
 
     def t_LOOPSTART(self, t):
-        r'(?m)^\s*(L|l)\d+'
+        r'(L|l)\d+(?=(:|\())'
         log.debug("Loop start token")
         v = t.value.lstrip()
         v = int(v[1:])
@@ -122,7 +122,7 @@ class Lexer:
         return t
 
     def t_LOOPEND(self, t):
-        r'(?m)^(    )*(END|End|end)\s+(L|l)\d+'
+        r'(END|End|end)\s(L|l)\d+'
         log.debug("Loop end token")
         v = t.value.lstrip()
         v = int(v[5:])
@@ -151,7 +151,7 @@ class Lexer:
         return t
 
     def t_DEFINE(self, t):
-        r'(DEFINE| Define| define)\s'
+        r'(DEFINE|Define|define)\s'
         return t
 
     def t_VARIABLE(self, t):
