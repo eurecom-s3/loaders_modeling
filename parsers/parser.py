@@ -367,7 +367,7 @@ class Parser:
         typename = p[2]
         if typename not in loaded_types:
             raise TypeError(f"Unknown type {typename}")
-        size = loaded_types[typename].size
+        size = loaded_types[typename].size // 8
         p[0] = Expression("IMM", Immediate(size))
 
     def p_expression_variable(self, p):
