@@ -348,4 +348,4 @@ class Z3Backend():
         constraint = Condition(expr, True, name='VTEST')
         self._exec_statement(constraint)
         self.generate_solver()
-        self.check_sat()
+        return self.check_sat()

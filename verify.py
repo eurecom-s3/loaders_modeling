@@ -22,11 +22,13 @@ if __name__ == "__main__":
     parser.parse_file(modelfile)
     backend = Z3Backend()
     backend.exec_statements(parser.statements)
-    # if not backend.check_sat():
-    #     log.critical("The model is not satisfiable. Aborting verification")
-    #     sys.exit(2)
 
     with open(executable, "rb") as fp:
         content = fp.read()
 
-    backend.verify(content)
+    if backend.verify(content):
+        log.info("PASS")
+        sys.exit(0)
+    else:
+        log.ingo("FAIL")
+        sys.exit(1)
