@@ -24,8 +24,6 @@ block_stack = deque()
 input_name = None
 
 statements = []
-loaded_types = {}
-
 
 class Parser:
     tokens = Lexer.tokens
@@ -133,7 +131,7 @@ class Parser:
 
         new_types = module.parse_file(fcontent)
         new_defs = module.preprocess_defs(fcontent)
-        loaded_types.update(new_types[1])
+        self.loaded_types.update(new_types[1])
         new_defs = {x: Expression("IMM", y) for x, y in new_defs.items()}
         defines.update(new_defs)
 
@@ -161,11 +159,11 @@ class Parser:
         'input_stmt : INPUT VARIABLE constant TYPE VARIABLE'
         log.debug("Input statement")
         t = p[5]
-        if t not in loaded_types:
+        if t not in self.loaded_types:
             log.warning(f"Unknown type {t}. Defaulting to untyped variable")
             var = (Variable(p[2]), p[3])
         else:
-            var = (Variable(p[2], loaded_types[t]), p[3])
+            var = (Variable(p[2], self.loaded_types[t]), p[3])
         p[0] = var
 
     def p_input_stmt(self, p):
@@ -225,10 +223,10 @@ class Parser:
     def p_loopstart_stmt_typed(self, p):
         'loopstart_stmt : loopstart TYPE VARIABLE'
         t = p[3]
-        if t not in loaded_types:
+        if t not in self.loaded_types:
             raise TypeError(f"Unknown type {t}")
         loop = p[1]
-        loop[1].vtype = loaded_types[t]
+        loop[1].vtype = self.loaded_types[t]
         p[0] = loop
 
     def p_loopstart_stmt_untyped(self, p):
@@ -260,11 +258,11 @@ class Parser:
         'assignment : VARIABLE ARROW expression TYPE VARIABLE'
         var = None
         t = p[5]
-        if t not in loaded_types:
+        if t not in self.loaded_types:
             log.warning(f"Unknown type {t}. Defaulting to untyped assignement")
             return p_assignment_untyped(self, p)
 
-        t = loaded_types[t]
+        t = self.loaded_types[t]
         if p[1] not in variables:
             log.debug(f"New variable found {p[1]} of type {t}")
             var = Variable(p[1], t)
@@ -366,9 +364,9 @@ class Parser:
     def p_expression_sizeof(self, p):
         'expression : SIZEOF VARIABLE'
         typename = p[2]
-        if typename not in loaded_types:
+        if typename not in self.loaded_types:
             raise TypeError(f"Unknown type {typename}")
-        size = loaded_types[typename].size // 8
+        size = self.loaded_types[typename].size // 8
         p[0] = Expression("IMM", Immediate(size))
 
     def p_expression_variable(self, p):
@@ -411,3 +409,4 @@ class Parser:
         except yacc.YaccError as e:
             log.exception(e)
             sys.exit(1)
+        self.loaded_types = {}
