@@ -8,7 +8,7 @@ log = logging.getLogger(__name__)
 coloredlogs.install(level="INFO", logger=log)
 
 from parsers import Parser
-from backends import *
+from backends import Z3Backend
 
 ftestcase = "testcase"
 
@@ -24,10 +24,10 @@ if __name__ == "__main__":
     modelfile = sys.argv[1]
     parser = Parser()
     parser.parse_file(modelfile)
-    exec_statements(parser.statements)
-    solver = generate_solver()
-    model = check_sat(solver)
+    backend = Z3Backend()
+    backend.exec_statements(parser.statements)
+    solver = backend.solver
+    model = backend.model
     if model:
-        testcase = generate_testcase(model)
+        testcase = backend.generate_testcase()
         write_testcase(testcase)
-        pefile = parse_pe()

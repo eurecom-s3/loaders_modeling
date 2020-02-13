@@ -16,7 +16,6 @@ import ply.yacc as yacc
 # Get the token map from the lexer.  This is required.
 from .langlex import Lexer
 from classes import Variable, Assignment, Expression, Condition, Immediate, BoolImmediate, ConditionList, ConditionListEntry, Loop, Input, Define
-from backends import dispatch
 
 variables = customdefdict(lambda x: Variable(x))
 conditions = {}
