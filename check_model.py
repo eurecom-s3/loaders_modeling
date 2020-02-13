@@ -16,10 +16,6 @@ def write_testcase(testcase):
     with open(ftestcase, "wb") as fp:
         fp.write(testcase)
 
-def parse_pe():
-    pe = pefile.PE(ftestcase)
-    return pe
-
 if __name__ == "__main__":
     modelfile = sys.argv[1]
     parser = Parser()
