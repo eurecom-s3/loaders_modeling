@@ -5,21 +5,63 @@ from collections import deque
 
 log = logging.getLogger(__name__)
 log.setLevel(logging.DEBUG)
-coloredlogs.install(level="INFO", logger=log)
+coloredlogs.install(level="DEBUG", logger=log)
+
+from pwnlib.util.packing import pack, unpack
 
 from classes import (Base, Immediate, Variable, Expression, Input,
                      Assignment, Condition, Loop)
+
+def sized(skipargs=(), skipret=False):
+    def sized_outer(func):
+        def sized_inner(*args):
+            targs = [x for n, x in enumerate(args) if n not in skipargs]
+            max_size = max(len(x) for x in targs)
+            args = [x + b'\x00'*(max_size - len(x)) for x in targs]
+            ret = func(*args)
+            if not skipret:
+                start = len(ret) - max_size
+            return ret if skipret else ret[start:]
+        return sized_inner
+    return sized_outer
+
+def unsigned(skipargs=(), skipret=False):
+    def unsigned_outer(func, *skip):
+        def unsigned_inner(*args):
+            # unpack the argumts as unsigned (unless they are ignored)
+            args = [unpack(x, 'all', endianness='little', sign=False)
+                    if n not in skipargs else x for n, x in enumerate(args)]
+            ret = func(*args)
+            return ret if skipret else pack(ret, 'all',
+                                            endianness='little', sign=False)
+        return unsigned_inner
+    return unsigned_outer
+
+def signed(skipargs=(), skipret=False):
+    def signed_outer(func, *skip):
+        def signed_inner(*args):
+            args = [unpack(x, 'all', endianness='little', sign=True)
+                    if n not in skipargs else x for n, x in enumerate(args)]
+            ret = func(*args)
+            return ret if skipret else pack(ret, 'all',
+                                            endianness='little', sign=True)
+        return signed_inner
+    return signed_outer
+
+class VerificationError(Exception):
+    pass
 
 class PythonBackend():
     def __init__(self):
         self.variables = {}
         self.conditions = {}
         self.terminal_conditions = {}
+        self._statements = None
         self.funcs = { 'ADD'   : self.ADD,
                        'SUB'   : self.SUB,
                        'MUL'   : self.MUL,
                        'DIV'   : self.DIV,
-                       'UDIV'  : self.UDiv,
+                       'UDIV'  : self.UDIV,
                        'MOD'   : self.MOD,
                        'AND'   : self.And,
                        'OR'    : self.Or,
@@ -46,111 +88,153 @@ class PythonBackend():
         }
 
     @staticmethod
+    @sized()
+    @signed()
     def ADD(a, b):
         return a + b
 
     @staticmethod
+    @sized()
+    @signed()
     def SUB(a, b):
         return a - b
 
     @staticmethod
+    @sized()
+    @signed()
     def MUL(a, b):
         return a * b
 
     @staticmethod
+    @sized()
+    @signed()
     def MOD(a, b):
         return a % b
 
     @staticmethod
+    @sized()
+    @signed()
     def DIV(a, b):
         return a // b
 
     @staticmethod
+    @sized()
+    @unsigned()
     def UDIV(a, b):
         return a // b
 
     @staticmethod
+    @sized(skipret=True)
+    @unsigned(skipret=True)
     def EQ(a, b):
         return a == b
 
     @staticmethod
+    @sized(skipret=True)
+    @unsigned(skipret=True)
     def NEQ(a, b):
         return a != b
 
     @staticmethod
+    @sized()
+    @unsigned()
     def BITOR(a, b):
         return a | b
 
     @staticmethod
+    @sized()
+    @unsigned()
     def BITAND(a, b):
         return a & b
 
     @staticmethod
+    @sized()
+    @unsigned()
     def BITNOT(a):
         return ~a
 
     @staticmethod
+    @unsigned()
     def ISPOW2(a):
-        return (a == 0) || (a & (a - 1)) == 0
+        return (a == 0) or (a & (a - 1)) == 0
 
     @staticmethod
     def And(a, b):
-        return a && b
+        return a and b
 
     @staticmethod
     def Or(a, b):
-        return a || b
+        return a or b
 
     @staticmethod
-    def Not(a, b):
-        return !a
+    def Not(a):
+        return not a
 
     @staticmethod
+    @sized(skipret=True)
+    @unsigned(skipret=True)
     def ULE(a, b):
         return a <= b
 
     @staticmethod
+    @sized(skipret=True)
+    @unsigned(skipret=True)
     def UGE(a, b):
         return a >= b
 
     @staticmethod
+    @sized(skipret=True)
+    @unsigned(skipret=True)
     def ULT(a, b):
         return a < b
 
     @staticmethod
+    @sized(skipret=True)
+    @unsigned(skipret=True)
     def UGT(a, b):
         return a > b
 
     @staticmethod
+    @sized(skipret=True)
+    @signed(skipret=True)
     def GE(a, b):
         return a >= b
 
     @staticmethod
+    @sized(skipret=True)
+    @signed(skipret=True)
     def LE(a, b):
         return a <= b
 
     @staticmethod
+    @sized(skipret=True)
+    @signed(skipret=True)
     def LT(a, b):
         return a < b
 
     @staticmethod
+    @sized(skipret=True)
+    @signed(skipret=True)
     def GT(a, b):
         return a > b
 
     @staticmethod
     def INT(a, b):
-        return a
+        return pack(a, b*8, endianness="big")
 
     @staticmethod
+    @unsigned(skipargs=(0, ), skipret=True)
     def Slice(var, start, cnt=1):
         if cnt == 1:
-            return var[start]
+            # Indexing a b-string in python returns an int...
+            return pack(var[start], 'all')
         else:
             return var[start:start+cnt]
 
     @staticmethod
     def IMM(imm):
-        return imm.value if isinstance(imm, Immediate) else imm
+        val = imm.value if isinstance(imm, Immediate) else imm
+        return pack(val, 'all', endianness='little')
 
     def VAR(self, var):
         return self.variables[var.name]
@@ -163,9 +247,13 @@ class PythonBackend():
             log.critical(f"Trying to dispatch function with {len(args)}"
                          " arguments")
             raise TypeError
-        return self.funcs[func](*args)
+        print(f"{func}({args})", end='')
+        ret = self.funcs[func](*args)
+        print(f" = {ret}")
+        return ret
 
     def _eval_expression(self, expr):
+        log.debug(f"Evaluating expression {expr}")
         opcode = expr.opcode
         operands = expr.operands
         operands_new = []
@@ -177,30 +265,27 @@ class PythonBackend():
         return self.dispatch(opcode, *operands_new)
 
     def _exec_input(self, stmt):
-        variable = stmt.var
-        log.debug(f"Creating variable {variable} of size {stmt.size}")
-        self.variables[variable.name] = symb
+        # variable = stmt.var
+        # log.debug(f"Creating variable {variable} of size {stmt.size}")
+        # symb = pack(0, stmt.size * 8, endianness='little')
+        # self.variables[variable.name] = symb
+        pass
 
     def _exec_unconditional_assignment(self, stmt):
-        log.debug(f"Executing unconditional assignemnt {stmt}")
-        var = stmt.left
-        expr = stmt.right
-        self.variables[var.name] = self._eval_expression(expr)
+        left = stmt.left.name
+        rigth = stmt.right
+        self.variables[left] = self._eval_expression(rigth)
 
     def _exec_conditional_assignment(self, stmt):
-        log.debug(f"Executing unconditional assignemnt {stmt}")
-        var = stmt.left
-        expr = stmt.right
-        if var.name not in self.variables:
-            log.warning(f"Variable {var.name} declared in a conditional assignement. Its value in case the condition is not satisfied defaults to 0")
+        left = stmt.left.name
+        rigth = stmt.right
+        conditions = stmt.conditions
+        if left not in self.variables:
+            log.warning(f"Variable {left} initialized in conditional statement. Defaulting it to 0.")
+            self.variables[left] = pack(0, "all")
 
-        z3expr = self._eval_expression(expr)
-        size = z3expr.size()
-        self.variables[var.name] = z3.BitVecVal(0, size)
-        self.variables[var.name] = z3.If(
-            z3.And(*[self._eval_condition(x) for x in stmt._conditions]),
-            z3expr,
-            z3.BitVecVal(0, size))
+        if all(self._eval_condition(x) for x in conditions):
+            self.variables[left] = self._eval_expression(rigth)
 
     def _exec_assignment(self, stmt):
         if stmt.conditional:
@@ -209,21 +294,23 @@ class PythonBackend():
             return self._exec_unconditional_assignment(stmt)
 
     def _eval_condition(self, condition):
-        if not condition.conditional:
-            return self._eval_expression(condition.expr)
-        if condition.isterminal:
-            return z3.If(
-                z3.And(*[self._eval_condition(x) for x in condition.conditions]),
-                self._eval_expression(condition.expr),
-                z3.BoolVal(True))
-
-        return z3.And(self._eval_expression(condition.expr),
-                      *[self._eval_condition(x) for x in condition.conditions])
+        if condition.name and condition.name in self.conditions:
+            return self.conditions[condition.name]
+        expr = self._eval_expression(condition.expr)
+        conds = all(self._eval_condition(x)
+                    for x in condition.conditions)
+        return expr & conds
 
     def _exec_condition(self, stmt):
-        self.conditions[stmt.name] = self._eval_condition(stmt)
-        if stmt.isterminal:
-            self.terminal_conditions[stmt.name] = self.conditions[stmt.name]
+        name = stmt.name
+        if name is None:
+            log.warning("Executing unnamed condition... Not sure this is intended.")
+        res = self._eval_condition(stmt)
+        self.conditions[name] = res
+
+        if not res and stmt.isterminal:
+            log.critical(f"Terminal condition {name} not met. Verification failed")
+            raise VerificationError
 
     def _exec_loop(self, stmt):
         cond_prefix = f"L{stmt._loop_name}_"
@@ -236,12 +323,15 @@ class PythonBackend():
         for index in range(stmt.maxunroll):
             pref = cond_prefix + f"{index}_"
             log.debug(f"Unrolling loop {stmt}. Index {index}")
-            lcond = Condition(Expression("UGT", count, index), False)
+            lcond = Condition(Expression("UGT",
+                                         count,
+                                         Expression("IMM", Immediate(index))),
+                              False)
             var_assignement = Assignment(ovar,
                                          Expression("Slice", ivar,
                                                     Expression("ADD", startpos,
-                                                               index*structsize),
-                                                    structsize),
+                                                               Expression("IMM", Immediate(index*structsize))),
+                                                    Expression("IMM", Immediate(structsize))),
                                          [lcond])
             self._exec_statement(var_assignement)
             for s in statements:
@@ -251,67 +341,35 @@ class PythonBackend():
                 s._conditions.append(lcond)
                 self._exec_statement(s)
 
+
     _exec_table = {Input: _exec_input,
                    Assignment: _exec_assignment,
                    Condition: _exec_condition,
                    Loop: _exec_loop}
-
     def _exec_statement(self, stmt):
         t = type(stmt)
         log.debug(f"Executing: {stmt}")
         self._exec_table[t](self, stmt)
 
-    def exec_statements(self, statements):
-        for stmt in statements:
+    def load_statements(self, statements):
+        self._statements = statements
+
+    def verify(self, test, variable="HEADER"):
+        if not self._statements:
+            log.error("Load statements before call verify()")
+            raise ValueError
+
+        self.variables[variable] = test
+        for stmt in self._statements:
             self._exec_statement(stmt)
 
-    def generate_solver(self):
-        log.info("Generating solver")
-        solver = z3.Solver()
-        for name, condition in self.terminal_conditions.items():
-            solver.assert_and_track(condition, name)
-        self._solver = solver
-        return solver
-
-    @property
-    def solver(self):
-        if self._solver is None:
-            self.generate_solver()
-        return self._solver
-
-    def check_sat(self):
-        solver = self.solver
-        log.info("Checking satisfiability")
-        if solver.check().r != 1:
-            log.critical("Model unsatisfiable")
-            unsat_core = solver.unsat_core()
-            log.critical(f"Unsat core: {unsat_core}")
-            for cname in unsat_core:
-                log.critical(self.conditions[str(cname)])
-            return None
-        else:
-            log.info("Model satisfiable")
-            log.info("Producing testcase")
-            model = solver.model()
-            self._model = model
-            return model
-
-    @property
-    def model(self):
-        if self._model is None:
-            self.check_sat()
-        return self._model
-
-    # this routine... if it works it's miracle
-    def generate_testcase(self):
-        model = self.model
-        log.info("Generating testcase")
-        header = self.variables['HEADER']
-        bitvec = model.eval(header)
-        string_hex_rev = hex(bitvec.as_long())[2:]
-        string_hex_rev = ('0' if (len(string_hex_rev) % 2 == 1) else "") + string_hex_rev
-        string_hex = ''.join([string_hex_rev[i:i+2]
-                              for i in range(len(string_hex_rev)-2, -2, -2)])
-        test = bytes.fromhex(string_hex)
-        test += b'\x00' * (header.size() - len(test))
-        return test
+if __name__ == "__main__":
+    inp = Input(Variable("input"), 64)
+    bcknd = PythonBackend()
+    bcknd._exec_input(inp)
+    expr = Expression("EQ",
+                      Expression("ADD",
+                                 Expression("VAR", Variable("input")),
+                                 Expression("IMM", 8)),
+                      Expression("IMM", 8))
+    res1 = bcknd._eval_expression(expr)
