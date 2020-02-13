@@ -9,7 +9,7 @@ import coloredlogs
 
 log = logging.getLogger(__name__)
 log.setLevel(10)
-coloredlogs.install(level="DEBUG", logger=log)
+coloredlogs.install(level="INFO", logger=log)
 
 import ply.yacc as yacc
 
@@ -38,7 +38,7 @@ class Parser:
             for s in lines:
                 cnt += 1
                 if not s: continue
-                log.info(f"Line {cnt}: {s}")
+                log.debug(f"Line {cnt}: {s}")
                 result = self.parser.parse(s)
                 if result:
                     print(result)
