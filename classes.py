@@ -175,7 +175,7 @@ class Loop(Statement):
         return s
 
 class Condition(Statement):
-    def __init__(self, expr, isterminal, conditions=None):
+    def __init__(self, expr, isterminal, conditions=None, name=None):
         if isinstance(expr, Expression):
             self.expr = expr
         elif isinstance(expr, bool):
@@ -194,7 +194,7 @@ class Condition(Statement):
         if not all(isinstance(x, Condition) for x in conditions):
             raise TypeError("Conditions must be a list of Condition object")
         self._conditions = conditions
-        self.name = None
+        self.name = name
 
     @property
     def conditions(self):

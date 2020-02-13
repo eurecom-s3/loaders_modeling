@@ -311,7 +311,6 @@ class Z3Backend():
             return None
         else:
             log.info("Model satisfiable")
-            log.info("Producing testcase")
             model = solver.model()
             self._model = model
             return model
@@ -335,3 +334,18 @@ class Z3Backend():
         test = bytes.fromhex(string_hex)
         test += b'\x00' * (header.size() - len(test))
         return test
+
+    def verify(self, test, variable="HEADER"):
+        var = self.variables[variable]
+        size = var.size()
+        if len(test) > size:
+            log.critical("The file to verify is bigger than the input of the model. Aborting.")
+            raise ValueError
+        test += b'\x00' * (size - len(test))
+        testvec = z3.BitVecVal(int.from_bytes(test, "little"), size*8)
+        self.variables['TEST__'] = testvec
+        expr = Expression("EQ", Expression("VAR", Variable(variable)), Expression("VAR", Variable("TEST__")))
+        constraint = Condition(expr, True, name='VTEST')
+        self._exec_statement(constraint)
+        self.generate_solver()
+        self.check_sat()
