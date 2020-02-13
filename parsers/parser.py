@@ -359,7 +359,9 @@ class Parser:
         field_off = var.type.offsets[field]
         field_size = var.type.fields[field].size // 8
         log.debug(f"Struct access: {var}.{field} --> Slice({var}, {field_off}, {field_size}).")
-        p[0] = Expression('Slice', Expression("VAR", var), field_off, field_size)
+        p[0] = Expression('Slice', Expression("VAR", var),
+                          Expression("IMM", Immediate(field_off)),
+                          Expression("IMM", Immediate(field_size)))
 
     def p_expression_sizeof(self, p):
         'expression : SIZEOF VARIABLE'
