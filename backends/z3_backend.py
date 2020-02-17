@@ -48,6 +48,7 @@ class Z3Backend():
                           'VAR'   : self.VAR,
                           'IMM'   : self.IMM
         }
+        self._statements = None
 
     @staticmethod
     def SUB(a, b):
@@ -285,6 +286,9 @@ class Z3Backend():
         for stmt in statements:
             self._exec_statement(stmt)
 
+    def load_statements(self, statements):
+        self._statements = statements
+
     def generate_solver(self):
         log.info("Generating solver")
         solver = z3.Solver()
@@ -336,6 +340,11 @@ class Z3Backend():
         return test
 
     def verify(self, test, variable="HEADER"):
+        if not self._statements:
+            log.error("Load statements before call verify()")
+            raise ValueError
+        self.exec_statements(self._statements)
+
         var = self.variables[variable]
         size = var.size()
         if len(test) > size:
