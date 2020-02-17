@@ -9,7 +9,7 @@ log = logging.getLogger(__name__)
 coloredlogs.install(level="INFO", logger=log)
 
 from parsers import Parser
-from backends import Z3Backend
+from backends import Z3Backend, PythonBackend
 
 if __name__ == "__main__":
     if len(sys.argv) != 3:
@@ -20,8 +20,8 @@ if __name__ == "__main__":
     executable = sys.argv[2]
     parser = Parser()
     parser.parse_file(modelfile)
-    backend = Z3Backend()
-    backend.exec_statements(parser.statements)
+    backend = PythonBackend()
+    backend.load_statements(parser.statements)
 
     with open(executable, "rb") as fp:
         content = fp.read()
@@ -30,5 +30,5 @@ if __name__ == "__main__":
         log.info("PASS")
         sys.exit(0)
     else:
-        log.ingo("FAIL")
+        log.info("FAIL")
         sys.exit(1)

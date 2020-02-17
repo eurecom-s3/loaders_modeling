@@ -5,7 +5,7 @@ from collections import deque
 
 log = logging.getLogger(__name__)
 log.setLevel(logging.DEBUG)
-coloredlogs.install(level="DEBUG", logger=log)
+coloredlogs.install(level="INFO", logger=log)
 
 from pwnlib.util.packing import pack, unpack
 
@@ -49,7 +49,8 @@ def signed(skipargs=(), skipret=False):
     return signed_outer
 
 class VerificationError(Exception):
-    pass
+    def __init__(self, name):
+        self.name = name
 
 class PythonBackend():
     def __init__(self):
@@ -220,7 +221,7 @@ class PythonBackend():
 
     @staticmethod
     def INT(a, b):
-        return pack(a, b*8, endianness="big")
+        return pack(a, b*8, endianness="little")
 
     @staticmethod
     @unsigned(skipargs=(0, ), skipret=True)
@@ -247,9 +248,7 @@ class PythonBackend():
             log.critical(f"Trying to dispatch function with {len(args)}"
                          " arguments")
             raise TypeError
-        print(f"{func}({args})", end='')
         ret = self.funcs[func](*args)
-        print(f" = {ret}")
         return ret
 
     def _eval_expression(self, expr):
@@ -299,6 +298,11 @@ class PythonBackend():
         expr = self._eval_expression(condition.expr)
         conds = all(self._eval_condition(x)
                     for x in condition.conditions)
+        if condition.isterminal:
+            if conds:
+                return expr
+            else:
+                return True
         return expr & conds
 
     def _exec_condition(self, stmt):
@@ -310,42 +314,37 @@ class PythonBackend():
 
         if not res and stmt.isterminal:
             log.critical(f"Terminal condition {name} not met. Verification failed")
-            raise VerificationError
+            raise VerificationError(name)
 
     def _exec_loop(self, stmt):
-        cond_prefix = f"L{stmt._loop_name}_"
-        statements = stmt._statements
-        ovar = Variable(stmt.output_name)
-        ivar = stmt.input_var
-        structsize = stmt.structsize
+        name = f"L{stmt._loop_name}"
+        varname = Variable(stmt.output_name)
+        inputvar = stmt.input_var
         startpos = stmt.startpos
-        count = stmt.count
-        for index in range(stmt.maxunroll):
-            pref = cond_prefix + f"{index}_"
-            log.debug(f"Unrolling loop {stmt}. Index {index}")
-            lcond = Condition(Expression("UGT",
-                                         count,
-                                         Expression("IMM", Immediate(index))),
-                              False)
-            var_assignement = Assignment(ovar,
-                                         Expression("Slice", ivar,
-                                                    Expression("ADD", startpos,
-                                                               Expression("IMM", Immediate(index*structsize))),
-                                                    Expression("IMM", Immediate(structsize))),
-                                         [lcond])
-            self._exec_statement(var_assignement)
-            for s in statements:
+        count = unpack(self._eval_expression(stmt.count), 'all',
+                       endianness='little')
+        structsize = Expression("IMM", Immediate(stmt.structsize))
+
+        log.debug(f"Executing loop {name} {count} times")
+        for iteration in range(count):
+            conditionpref = f"{name}_{iteration}_"
+            iterationexpr = Expression("IMM", Immediate(iteration))
+            nstartpos = Expression("ADD", startpos,
+                                  Expression("MUL", structsize, iterationexpr))
+            sliceexpr = Expression("Slice", inputvar, nstartpos, structsize)
+            assignment = Assignment(varname, sliceexpr)
+            self._exec_assignment(assignment)
+            for s in stmt._statements:
                 if isinstance(s, Condition):
                     s = s.clone()
-                    s.add_prefix(pref)
-                s._conditions.append(lcond)
+                    s.add_prefix(conditionpref)
                 self._exec_statement(s)
-
 
     _exec_table = {Input: _exec_input,
                    Assignment: _exec_assignment,
                    Condition: _exec_condition,
                    Loop: _exec_loop}
+
     def _exec_statement(self, stmt):
         t = type(stmt)
         log.debug(f"Executing: {stmt}")
@@ -361,7 +360,13 @@ class PythonBackend():
 
         self.variables[variable] = test
         for stmt in self._statements:
-            self._exec_statement(stmt)
+            try:
+                self._exec_statement(stmt)
+            except VerificationError as e:
+                log.error(f"Condition {e.name} not satisfied. "
+                          "Verification failed.")
+                return False
+        return True
 
 if __name__ == "__main__":
     inp = Input(Variable("input"), 64)
