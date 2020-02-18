@@ -9,16 +9,27 @@ from .default_backend import DefaultBackend, VerificationError
 from classes import (Base, Immediate, Variable, Expression, Input,
                      Assignment, Condition, Loop)
 
-def sized(skipargs=(), skipret=False):
+def extend(value, n, signed):
+    if not signed:
+        return value + b'\x00'*n
+    trail = b'\x00' if (value[-1] & (0x80)) == 0 else b'\xff'
+    return value + trail*n
+
+def sized(skipargs=(), skipret=False, sign=False):
     def sized_outer(func):
         def sized_inner(*args):
             targs = [x for n, x in enumerate(args) if n not in skipargs]
             max_size = max(len(x) for x in targs)
-            args = [x + b'\x00'*(max_size - len(x)) for x in targs]
+            args = [extend(x, max_size - len(x), sign) for x in targs]
             ret = func(*args)
-            if not skipret:
-                start = len(ret) - max_size
-            return ret if skipret else ret[start:]
+            if not skipret: # pack output
+                lendiff = len(ret) - max_size
+                if lendiff >= 0: # if output is longer than input, cut it
+                    return ret[lendiff:]
+                else: # if smaller, extend it (trail, depends on signness)
+                    return extend(ret, -lendiff, sign)
+            else:
+                return ret
         return sized_inner
     return sized_outer
 
@@ -30,7 +41,7 @@ def unsigned(skipargs=(), skipret=False):
                     if n not in skipargs else x for n, x in enumerate(args)]
             ret = func(*args)
             return ret if skipret else pack(ret, 'all',
-                                            endianness='little', sign=False)
+                                            endianness='little')
         return unsigned_inner
     return unsigned_outer
 
@@ -44,6 +55,7 @@ def signed(skipargs=(), skipret=False):
                                             endianness='little', sign=True)
         return signed_inner
     return signed_outer
+
 
 class PythonBackend(DefaultBackend):
     def __init__(self):
@@ -83,14 +95,14 @@ class PythonBackend(DefaultBackend):
 
 
     @staticmethod
-    @sized()
-    @unsigned()
+    @sized(sign=True)
+    @signed()
     def ADD(a, b):
         return a + b
 
     @staticmethod
-    @sized()
-    @unsigned()
+    @sized(sign=True)
+    @signed()
     def SUB(a, b):
         return a - b
 
@@ -283,7 +295,7 @@ class PythonBackend(DefaultBackend):
                 return expr
             else:
                 return True
-        return expr & conds
+        return conds and expr
 
     def _exec_condition(self, stmt):
         name = stmt.name
