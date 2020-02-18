@@ -84,13 +84,13 @@ class PythonBackend(DefaultBackend):
 
     @staticmethod
     @sized()
-    @signed()
+    @unsigned()
     def ADD(a, b):
         return a + b
 
     @staticmethod
     @sized()
-    @signed()
+    @unsigned()
     def SUB(a, b):
         return a - b
 
@@ -229,6 +229,8 @@ class PythonBackend(DefaultBackend):
     @staticmethod
     def IMM(imm):
         val = imm.value if isinstance(imm, Immediate) else imm
+        if type(val) == bool:
+            return val
         return pack(val, 'all', endianness='little')
 
     def VAR(self, var):
