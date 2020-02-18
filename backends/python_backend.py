@@ -3,12 +3,9 @@ import logging
 import coloredlogs
 from collections import deque
 
-log = logging.getLogger(__name__)
-log.setLevel(logging.DEBUG)
-coloredlogs.install(level="INFO", logger=log)
-
 from pwnlib.util.packing import pack, unpack
 
+from .default_backend import DefaultBackend, VerificationError
 from classes import (Base, Immediate, Variable, Expression, Input,
                      Assignment, Condition, Loop)
 
@@ -48,16 +45,9 @@ def signed(skipargs=(), skipret=False):
         return signed_inner
     return signed_outer
 
-class VerificationError(Exception):
-    def __init__(self, name):
-        self.name = name
-
-class PythonBackend():
+class PythonBackend(DefaultBackend):
     def __init__(self):
-        self.variables = {}
-        self.conditions = {}
-        self.terminal_conditions = {}
-        self._statements = None
+        super().__init__()
         self.funcs = { 'ADD'   : self.ADD,
                        'SUB'   : self.SUB,
                        'MUL'   : self.MUL,
@@ -87,6 +77,10 @@ class PythonBackend():
                        'VAR'   : self.VAR,
                        'IMM'   : self.IMM
         }
+        self.log = logging.getLogger(__name__)
+        self.log.setLevel(logging.DEBUG)
+        coloredlogs.install(level="INFO", logger=self.log)
+
 
     @staticmethod
     @sized()
@@ -245,29 +239,13 @@ class PythonBackend():
 
     def dispatch(self, func, *args):
         if not 0 < len(args) < 4:
-            log.critical(f"Trying to dispatch function with {len(args)}"
+            self.log.critical(f"Trying to dispatch function with {len(args)}"
                          " arguments")
             raise TypeError
         ret = self.funcs[func](*args)
         return ret
 
-    def _eval_expression(self, expr):
-        log.debug(f"Evaluating expression {expr}")
-        opcode = expr.opcode
-        operands = expr.operands
-        operands_new = []
-        for op in operands:
-            if isinstance(op, Expression):
-                operands_new.append(self._eval_expression(op))
-            else:
-                operands_new.append(op)
-        return self.dispatch(opcode, *operands_new)
-
     def _exec_input(self, stmt):
-        # variable = stmt.var
-        # log.debug(f"Creating variable {variable} of size {stmt.size}")
-        # symb = pack(0, stmt.size * 8, endianness='little')
-        # self.variables[variable.name] = symb
         pass
 
     def _exec_unconditional_assignment(self, stmt):
@@ -280,7 +258,7 @@ class PythonBackend():
         rigth = stmt.right
         conditions = stmt.conditions
         if left not in self.variables:
-            log.warning(f"Variable {left} initialized in conditional statement. Defaulting it to 0.")
+            self.log.warning(f"Variable {left} initialized in conditional statement. Defaulting it to 0.")
             self.variables[left] = pack(0, "all")
 
         if all(self._eval_condition(x) for x in conditions):
@@ -308,12 +286,12 @@ class PythonBackend():
     def _exec_condition(self, stmt):
         name = stmt.name
         if name is None:
-            log.warning("Executing unnamed condition... Not sure this is intended.")
+            self.log.warning("Executing unnamed condition... Not sure this is intended.")
         res = self._eval_condition(stmt)
         self.conditions[name] = res
 
         if not res and stmt.isterminal:
-            log.critical(f"Terminal condition {name} not met. Verification failed")
+            self.log.critical(f"Terminal condition {name} not met. Verification failed")
             raise VerificationError(name)
 
     def _exec_loop(self, stmt):
@@ -325,7 +303,7 @@ class PythonBackend():
                        endianness='little')
         structsize = Expression("IMM", Immediate(stmt.structsize))
 
-        log.debug(f"Executing loop {name} {count} times")
+        self.log.debug(f"Executing loop {name} {count} times")
         for iteration in range(count):
             conditionpref = f"{name}_{iteration}_"
             iterationexpr = Expression("IMM", Immediate(iteration))
@@ -345,17 +323,9 @@ class PythonBackend():
                    Condition: _exec_condition,
                    Loop: _exec_loop}
 
-    def _exec_statement(self, stmt):
-        t = type(stmt)
-        log.debug(f"Executing: {stmt}")
-        self._exec_table[t](self, stmt)
-
-    def load_statements(self, statements):
-        self._statements = statements
-
     def verify(self, test, variable="HEADER"):
         if not self._statements:
-            log.error("Load statements before call verify()")
+            self.log.error("Load statements before call verify()")
             raise ValueError
 
         self.variables[variable] = test
@@ -363,7 +333,7 @@ class PythonBackend():
             try:
                 self._exec_statement(stmt)
             except VerificationError as e:
-                log.error(f"Condition {e.name} not satisfied. "
+                self.log.error(f"Condition {e.name} not satisfied. "
                           "Verification failed.")
                 return False
         return True

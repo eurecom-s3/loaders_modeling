@@ -3,20 +3,15 @@ import logging
 import coloredlogs
 from collections import deque
 
-log = logging.getLogger(__name__)
-log.setLevel(logging.DEBUG)
-coloredlogs.install(level="INFO", logger=log)
-
 import z3
 
+from .default_backend import DefaultBackend
 from classes import (Base, Immediate, Variable, Expression, Input,
                      Assignment, Condition, Loop)
 
-class Z3Backend():
+class Z3Backend(DefaultBackend):
     def __init__(self):
-        self.variables = {}
-        self.conditions = {}
-        self.terminal_conditions = {}
+        super().__init__()
         self._solver = None
         self._model = None
         self.z3_funcs = { 'ADD'   : z3.Sum,
@@ -48,7 +43,10 @@ class Z3Backend():
                           'VAR'   : self.VAR,
                           'IMM'   : self.IMM
         }
-        self._statements = None
+        self.log = logging.getLogger(__name__)
+        self.log.setLevel(logging.DEBUG)
+        coloredlogs.install(level="INFO", logger=self.log)
+
 
     @staticmethod
     def SUB(a, b):
@@ -145,7 +143,7 @@ class Z3Backend():
 
     def dispatch_z3_2(self, func, arg1, arg2):
         if func not in self.z3_funcs:
-            log.critical(f"Function {func} not recognized")
+            self.log.critical(f"Function {func} not recognized")
             raise NameError
         if (func in self.z3_funcs_sized):
             if isinstance(arg1, int):
@@ -167,13 +165,13 @@ class Z3Backend():
 
     def dispatch_z3_3(self, func, *args):
         if func != "Slice":
-            log.CRITICAL(f"{func} not recognized as a 3-arguments function")
+            self.log.CRITICAL(f"{func} not recognized as a 3-arguments function")
             raise ValueError
         return self.z3_funcs[func](*args)
 
     def dispatch_z3(self, func, *args):
         if not 0 < len(args) < 4:
-            log.critical(f"Trying to dispatch function with {len(args)}"
+            self.log.critical(f"Trying to dispatch function with {len(args)}"
                          " arguments")
             raise TypeError
         if len(args) == 1:
@@ -185,35 +183,24 @@ class Z3Backend():
 
     dispatch = dispatch_z3
 
-    def _eval_expression(self, expr):
-        opcode = expr.opcode
-        operands = expr.operands
-        operands_new = []
-        for op in operands:
-            if isinstance(op, Expression):
-                operands_new.append(self._eval_expression(op))
-            else:
-                operands_new.append(op)
-        return self.dispatch(opcode, *operands_new)
-
     def _exec_input(self, stmt):
         variable = stmt.var
-        log.debug(f"Creating variable {variable} of size {stmt.size}")
+        self.log.debug(f"Creating variable {variable} of size {stmt.size}")
         symb = z3.BitVec(variable.name, stmt.size * 8)
         self.variables[variable.name] = symb
 
     def _exec_unconditional_assignment(self, stmt):
-        log.debug(f"Executing unconditional assignemnt {stmt}")
+        self.log.debug(f"Executing unconditional assignemnt {stmt}")
         var = stmt.left
         expr = stmt.right
         self.variables[var.name] = self._eval_expression(expr)
 
     def _exec_conditional_assignment(self, stmt):
-        log.debug(f"Executing unconditional assignemnt {stmt}")
+        self.log.debug(f"Executing unconditional assignemnt {stmt}")
         var = stmt.left
         expr = stmt.right
         if var.name not in self.variables:
-            log.warning(f"Variable {var.name} declared in a conditional assignement. Its value in case the condition is not satisfied defaults to 0")
+            self.log.warning(f"Variable {var.name} declared in a conditional assignement. Its value in case the condition is not satisfied defaults to 0")
 
         z3expr = self._eval_expression(expr)
         size = z3expr.size()
@@ -256,7 +243,7 @@ class Z3Backend():
         count = stmt.count
         for index in range(stmt.maxunroll):
             pref = cond_prefix + f"{index}_"
-            log.debug(f"Unrolling loop {stmt}. Index {index}")
+            self.log.debug(f"Unrolling loop {stmt}. Index {index}")
             lcond = Condition(Expression("UGT", count, index), False)
             var_assignement = Assignment(ovar,
                                          Expression("Slice", ivar,
@@ -277,20 +264,8 @@ class Z3Backend():
                    Condition: _exec_condition,
                    Loop: _exec_loop}
 
-    def _exec_statement(self, stmt):
-        t = type(stmt)
-        log.debug(f"Executing: {stmt}")
-        self._exec_table[t](self, stmt)
-
-    def exec_statements(self, statements):
-        for stmt in statements:
-            self._exec_statement(stmt)
-
-    def load_statements(self, statements):
-        self._statements = statements
-
     def generate_solver(self):
-        log.info("Generating solver")
+        self.log.info("Generating solver")
         solver = z3.Solver()
         for name, condition in self.terminal_conditions.items():
             solver.assert_and_track(condition, name)
@@ -305,16 +280,16 @@ class Z3Backend():
 
     def check_sat(self):
         solver = self.solver
-        log.info("Checking satisfiability")
+        self.log.info("Checking satisfiability")
         if solver.check().r != 1:
-            log.critical("Model unsatisfiable")
+            self.log.critical("Model unsatisfiable")
             unsat_core = solver.unsat_core()
-            log.critical(f"Unsat core: {unsat_core}")
+            self.log.critical(f"Unsat core: {unsat_core}")
             for cname in unsat_core:
-                log.critical(self.conditions[str(cname)])
+                self.log.critical(self.conditions[str(cname)])
             return None
         else:
-            log.info("Model satisfiable")
+            self.log.info("Model satisfiable")
             model = solver.model()
             self._model = model
             return model
@@ -328,7 +303,7 @@ class Z3Backend():
     # this routine... if it works it's miracle
     def generate_testcase(self):
         model = self.model
-        log.info("Generating testcase")
+        self.log.info("Generating testcase")
         header = self.variables['HEADER']
         bitvec = model.eval(header)
         string_hex_rev = hex(bitvec.as_long())[2:]
@@ -341,14 +316,14 @@ class Z3Backend():
 
     def verify(self, test, variable="HEADER"):
         if not self._statements:
-            log.error("Load statements before call verify()")
+            self.log.error("Load statements before call verify()")
             raise ValueError
         self.exec_statements(self._statements)
 
         var = self.variables[variable]
         size = var.size()
         if len(test) > size:
-            log.critical("The file to verify is bigger than the input of the model. Aborting.")
+            self.log.critical("The file to verify is bigger than the input of the model. Aborting.")
             raise ValueError
         test += b'\x00' * (size - len(test))
         testvec = z3.BitVecVal(int.from_bytes(test, "little"), size*8)
