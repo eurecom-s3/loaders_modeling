@@ -287,15 +287,15 @@ class PythonBackend(DefaultBackend):
     def _eval_condition(self, condition):
         if condition.name and condition.name in self.conditions:
             return self.conditions[condition.name]
-        expr = self._eval_expression(condition.expr)
+        expr = lambda: self._eval_expression(condition.expr)
         conds = all(self._eval_condition(x)
                     for x in condition.conditions)
         if condition.isterminal:
             if conds:
-                return expr
+                return expr()
             else:
                 return True
-        return conds and expr
+        return conds and expr()
 
     def _exec_condition(self, stmt):
         name = stmt.name
