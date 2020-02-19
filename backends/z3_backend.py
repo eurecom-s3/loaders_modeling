@@ -7,7 +7,7 @@ import z3
 
 from .default_backend import DefaultBackend
 from classes import (Base, Immediate, Variable, Expression, Input,
-                     Assignment, Condition, Loop)
+                     Assignment, Condition, Loop, VLoop)
 
 class Z3Backend(DefaultBackend):
     def __init__(self):
@@ -259,10 +259,56 @@ class Z3Backend(DefaultBackend):
                 s._conditions.append(lcond)
                 self._exec_statement(s)
 
+    def _exec_vloop(self, stmt):
+        cond_prefix = f"L{stmt._loop_name}_"
+        statements = stmt._statements
+        ovar = Variable(stmt.output_name)
+        start = stmt.start
+        nextvar = stmt.nextname
+        condname = stmt.contcondition
+        maxunroll = stmt.maxunroll
+
+        if condname in self.conditions:
+            cond = self.conditions[condname]
+        else:
+            cond = Condition(True, isterminal=False, name=condname)
+            self.conditions[condname] = cond
+
+        # Assign the first value
+        initial_assignement = Assignment(ovar, start)
+        self._exec_assignment(initial_assignement)
+        # Unroll
+        for index in range(stmt.maxunroll):
+            # Prefix for the conditions
+            pref = cond_prefix + f"{index}_"
+            self.log.debug(f"Unrolling loop {stmt}. Index {index}")
+
+            # For each statement in the loop
+            for s in statements:
+                # if the statement is a condition...
+                if isinstance(s, Condition):
+                    # ... clone it
+                    s = s.clone()
+                    # if it changes the loop condition...
+                    if s.name == condname:
+                        # keep it in mind for later
+                        nextcond = s
+                    # change its name, adding the prefix
+                    s.add_prefix(pref)
+                s._conditions.append(cond)
+                self._exec_statement(s)
+
+            cond = nextcond
+            nextcond = None
+            nextassignment = Assignment(ovar, Expression("VAR", nextvar),
+                                        conditions=[cond])
+            self._exec_assignment(nextassignment)
+
     _exec_table = {Input: _exec_input,
                    Assignment: _exec_assignment,
                    Condition: _exec_condition,
-                   Loop: _exec_loop}
+                   Loop: _exec_loop,
+                   VLoop: _exec_vloop}
 
     def generate_solver(self):
         self.log.info("Generating solver")
