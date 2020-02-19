@@ -321,12 +321,12 @@ class Parser:
         p[0] = Condition(p[1], False)
 
     def p_expression_z3operator1(self, p):
-        'expression : Z3OPERATOR1 expression'
+        'expression : OPERATOR1 expression'
         p2 = p[2]
         p[0] = Expression(p[1], p2)
 
     def p_expression_z3operator2(self, p):
-        'expression : Z3OPERATOR2 expression expression'
+        'expression : OPERATOR2 expression expression'
         p2 = p[2]
         p3 = p[3]
         p[0] = Expression(p[1], p2, p3)

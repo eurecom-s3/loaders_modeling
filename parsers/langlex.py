@@ -2,8 +2,6 @@ import logging
 import ply.lex as lex
 import re
 
-import z3
-
 from classes import Base
 
 log = logging.getLogger(__name__)
@@ -15,8 +13,8 @@ class Lexer:
         'NEWLINE',
 
         # these translate to z3 functions
-        'Z3OPERATOR1',
-        'Z3OPERATOR2',
+        'OPERATOR1',
+        'OPERATOR2',
 
         'ASSIGNSTART',
         'CONDITIONSTART',
@@ -58,13 +56,13 @@ class Lexer:
         'DEFINE',
     )
 
-    def t_Z3OPERATOR1(self, t):
+    def t_OPERATOR1(self, t):
         r'(NOT|Not|BITNOT|BITNot|BitNot|ISPOW2|IsPow2|isPow2)'
         t.value = t.value.upper()
         log.debug("OPERATOR1 token")
         return t
 
-    def t_Z3OPERATOR2(self, t):
+    def t_OPERATOR2(self, t):
         r"(ADD|SUB|DIV|UDIV|AND|OR|ULE|UGE|ULT|UGT|Add|Sub|Div|UDiv|And|Or|ULe|UGe|ULt|UGt|BITAND|BITAnd|BitAnd|BITOR|BITOr|BitOr|LE|Le|GE|Ge|NEQ|NEq|Neq|EQ|Eq|LT|Lt|GT|Gt|INT|Int|MOD|Mod|MUL|Mul)\s"
         log.debug("OPERATOR2 token")
         t.value = t.value[:-1].upper()
