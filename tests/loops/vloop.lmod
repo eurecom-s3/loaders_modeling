@@ -1,0 +1,8 @@
+DEFINE SIZE 1000
+INPUT HEADER SIZE
+P: startingOffset <- INT 0 8
+L1: currentOffset <- VLOOP(startingOffset, next, V99, 50)
+    V1: Eq HEADER[currentOffset] currentOffset term
+    P: next <- Add currentOffset 1
+    V99: ULE currentOffset 0xf
+END L1
