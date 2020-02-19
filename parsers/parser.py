@@ -17,14 +17,6 @@ import ply.yacc as yacc
 from .langlex import Lexer
 from classes import Variable, Assignment, Expression, Condition, Immediate, BoolImmediate, ConditionList, ConditionListEntry, Loop, VLoop, Input, Define
 
-variables = customdefdict(lambda x: Variable(x))
-conditions = {}
-defines = {}
-block_stack = deque()
-input_name = None
-
-statements = []
-
 class Parser:
     tokens = Lexer.tokens
     def parse_file(self, fname):
@@ -43,15 +35,19 @@ class Parser:
 
     @property
     def variables(self):
-        return variables
+        return self._variables
 
     @property
     def statements(self):
-        return statements
+        return self._statements
 
     @property
     def conditions(self):
-        return conditions
+        return self._conditions
+
+    @property
+    def defines(self):
+        return self._defines
 
     def p_input(self, p):
         'input : input NEWLINE'
@@ -60,57 +56,57 @@ class Parser:
     def p_input_ass(self, p):
         'input : assignment_stmt'
         log.debug("Assignment: " + str(p[1]))
-        if len(block_stack) == 0:
-            statements.append(p[1])
+        if len(self._block_stack) == 0:
+            self.statements.append(p[1])
         else:
-            block = block_stack.pop()
+            block = self._block_stack.pop()
             block.add_statement(p[1])
-            block_stack.append(block)
+            self._block_stack.append(block)
 
     def p_input_cond(self, p):
         'input : condition_stmt'
         log.debug("Condition " + str(p[1]))
         name, condition = p[1]
-        conditions[name.upper()] = condition
+        self.conditions[name.upper()] = condition
         condition.name = name.upper()
-        if len(block_stack) == 0:
-            statements.append(condition)
+        if len(self._block_stack) == 0:
+            self.statements.append(condition)
         else:
-            block = block_stack.pop()
+            block = self._block_stack.pop()
             block.add_statement(condition)
-            block_stack.append(block)
+            self._block_stack.append(block)
 
     def p_input_input(self, p):
         'input : input_stmt'
         log.debug("Input " + str(p[1]))
         stmt = Input(p[1][0], p[1][1])
-        statements.append(stmt)
-        variables[p[1][0].name] = p[1][0]
+        self.statements.append(stmt)
+        self.variables[p[1][0].name] = p[1][0]
 
     def p_input_loopstart(self, p):
         'input : loopstart_stmt'
         log.debug("Loop start " + str(p[1]))
         loop = p[1][1]
-        block_stack.append(loop)
-        var = variables[loop.output_name]
+        self._block_stack.append(loop)
+        var = self.variables[loop.output_name]
         var.type = loop.vtype
 
     def p_input_loopend(self, p):
         'input : loopend_stmt'
-        loop = block_stack.pop()
+        loop = self._block_stack.pop()
         if loop._loop_name != p[1][0]:
             log.critical("Loop end does not match current loop name")
             raise ValueError
         log.debug("Loop end " + str(p[1][0]))
-        statements.append(loop)
+        self.statements.append(loop)
 
     def p_input_define(self, p):
         'input : define_stmt'
         stmt = p[1]
-        if stmt.name in variables:
+        if stmt.name in self.variables:
             log.warning(f"Defining constant {stmt.name}, but a variable with the same name already declared. Skipping")
         else:
-            defines[stmt.name] = stmt.value
+            self.defines[stmt.name] = stmt.value
 
     def p_define_stmt(self, p):
         'define_stmt : DEFINE VARIABLE expression'
@@ -132,7 +128,7 @@ class Parser:
         new_defs = module.preprocess_defs(fcontent)
         self.loaded_types.update(new_types[1])
         new_defs = {x: Expression("IMM", y) for x, y in new_defs.items()}
-        defines.update(new_defs)
+        self.defines.update(new_defs)
 
     def p_load_stmt(self, p):
         'load_stmt : load_preamble VARIABLE VARIABLE'
@@ -178,10 +174,10 @@ class Parser:
     def p_constant_define(self, p):
         'constant : VARIABLE'
         name = p[1]
-        if name not in defines:
+        if name not in self.defines:
             log.error(f"{name} not defined as a constant")
             raise ValueError
-        p[0] = defines[name].operands[0].value
+        p[0] = self.defines[name].operands[0].value
 
     def p_assignment_stmt_uncond(self, p):
         'assignment_stmt : ASSIGNSTART COLON assignment'
@@ -193,7 +189,8 @@ class Parser:
         assignement = p[4]
         assignement.left.symb = assignement.right
         conditionslist = p[2]
-        conds = [~conditions[c.name] if c.negated else conditions[c.name]
+        conds = [~self.conditions[c.name] if c.negated else
+                 self.conditions[c.name]
                  for c in conditionslist]
         assignement.conditions = conds
         p[0] = assignement
@@ -208,14 +205,14 @@ class Parser:
         cond = p[4]
         cond.name = p[1]
         conditionslist = p[2]
-        conds = [conditions[c] for c in conditionslist.names]
+        conds = [self.conditions[c] for c in conditionslist.names]
         cond.conditions = conds
         p[0] = (p[1], cond)
 
     def p_condition_stmt_noexpr(self, p):
         'condition_stmt : CONDITIONNAME conditionlist SEMICOLON'
         conditionslist = p[2]
-        conds = [conditions[c] for c in conditionslist.names]
+        conds = [self.conditions[c] for c in conditionslist.names]
         cond = Condition(True, False, conds)
         p[0] = (p[1], cond)
 
@@ -274,12 +271,12 @@ class Parser:
             return p_assignment_untyped(self, p)
 
         t = self.loaded_types[t]
-        if p[1] not in variables:
+        if p[1] not in self.variables:
             log.debug(f"New variable found {p[1]} of type {t}")
             var = Variable(p[1], t)
-            variables[var.name] = var
+            self.variables[var.name] = var
         else:
-            var = variables[p[1]]
+            var = self.variables[p[1]]
             if t != var.type:
                 log.warning(f"Variable {var.name} already declared as {var.type}. Cannot convert it as {t}. Leaving it typed as {var.type}.")
         p[0] = Assignment(var, p[3])
@@ -287,12 +284,12 @@ class Parser:
     def p_assignment_untyped(self, p):
         'assignment : VARIABLE ARROW expression'
         var = None
-        if p[1] not in variables:
+        if p[1] not in self.variables:
             log.debug(f"New variable found {p[1]}")
             var = Variable(p[1])
-            variables[var.name] = var
+            self.variables[var.name] = var
         else:
-            var = variables[p[1]]
+            var = self.variables[p[1]]
         p[0] = Assignment(var, p[3])
 
     def p_conditionlist(self, p):
@@ -354,10 +351,10 @@ class Parser:
     def p_expression_struct_access(self, p):
         'expression : VARIABLE DOT VARIABLE'
         varname = p[1]
-        if varname not in variables:
+        if varname not in self.variables:
             log.error(f"Unknown varaible {varname}.")
             raise ValueError
-        var = variables[p[1]]
+        var = self.variables[p[1]]
         if var.type is None:
             log.error(f"Variable {varname} is untyped. Cannot access sub-fields.")
             raise ValueError
@@ -384,14 +381,14 @@ class Parser:
         'expression : VARIABLE'
         log.debug("Found variable " + p[1])
         varname = p[1]
-        if varname not in variables and varname not in defines:
+        if varname not in self.variables and varname not in self.defines:
             log.critical("Using variable %s before assignement" % varname)
             raise NameError
 
-        if varname in variables:
-            p[0] = Expression("VAR", variables[varname])
+        if varname in self.variables:
+            p[0] = Expression("VAR", self.variables[varname])
         else:
-            p[0] = defines[varname]
+            p[0] = self.defines[varname]
 
     def p_expression_number(self, p):
         'expression : NUMBER'
@@ -415,9 +412,14 @@ class Parser:
 
     def __init__(self):
         self.lexer = Lexer()
+        self.loaded_types = {}
+        self._variables = customdefdict(lambda x: Variable(x))
+        self._conditions = {}
+        self._defines = {}
+        self._block_stack = deque()
+        self._statements = []
         try:
             self.parser = yacc.yacc(module=self)
         except yacc.YaccError as e:
             log.exception(e)
             sys.exit(1)
-        self.loaded_types = {}
