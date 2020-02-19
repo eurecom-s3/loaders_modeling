@@ -15,7 +15,7 @@ import ply.yacc as yacc
 
 # Get the token map from the lexer.  This is required.
 from .langlex import Lexer
-from classes import Variable, Assignment, Expression, Condition, Immediate, BoolImmediate, ConditionList, ConditionListEntry, Loop, Input, Define
+from classes import Variable, Assignment, Expression, Condition, Immediate, BoolImmediate, ConditionList, ConditionListEntry, Loop, VLoop, Input, Define
 
 variables = customdefdict(lambda x: Variable(x))
 conditions = {}
@@ -94,7 +94,6 @@ class Parser:
         block_stack.append(loop)
         var = variables[loop.output_name]
         var.type = loop.vtype
-        input_var = loop.input_var
 
     def p_input_loopend(self, p):
         'input : loopend_stmt'
@@ -221,7 +220,8 @@ class Parser:
         p[0] = (p[1], cond)
 
     def p_loopstart_stmt_typed(self, p):
-        'loopstart_stmt : loopstart TYPE VARIABLE'
+        '''loopstart_stmt : loopstart TYPE VARIABLE
+                            | vloopstart TYPE VARIABLE'''
         t = p[3]
         if t not in self.loaded_types:
             raise TypeError(f"Unknown type {t}")
@@ -230,7 +230,8 @@ class Parser:
         p[0] = loop
 
     def p_loopstart_stmt_untyped(self, p):
-        'loopstart_stmt : loopstart'
+        '''loopstart_stmt : loopstart
+                            | vloopstart'''
         p[0] = p[1]
 
     def p_loopstart_stmt(self, p):
@@ -249,6 +250,16 @@ class Parser:
         loop = Loop(p[1], p[3], p[7], p[9], structsize, p[13], p[15])
         p[0] = (loopindex, loop)
 
+    def p_vloopstart_stmt_variable(self, p):
+        'vloopstart : LOOPSTART COLON VARIABLE ARROW VLOOP LPAREN expression COMMA VARIABLE COMMA CONDITIONNAME COMMA NUMBER RPAREN'
+        loopindex = p[1]
+        newvar = p[3]
+        start = p[7]
+        nextname = Variable(p[9])
+        condition = p[11]
+        maxunroll = p[13]
+        loop = VLoop(loopindex, newvar, start, nextname, condition, maxunroll)
+        p[0] = (loopindex, loop)
 
     def p_loopend_stmt(self, p):
         'loopend_stmt : LOOPEND'

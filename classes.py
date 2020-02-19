@@ -174,6 +174,36 @@ class Loop(Statement):
         s = f"<Loop {self._loop_name}: {self.output_name} in {self.input_var}>"
         return s
 
+class VLoop(Loop):
+    def __init__(self, loop_name, output_name, start, nextname, contcondition, maxunroll, vtype=None):
+        self._loop_name = loop_name
+        self.output_name = output_name
+        if not isinstance(start, Expression):
+            t = type(start)
+            raise TypeError(f"Expected Expression for start."
+                            f"Found {t}")
+        self.start = start
+
+        if not isinstance(nextname, Variable):
+            t = type(nextname)
+            raise TypeError(f"Expected Variable for nextname."
+                            f"Found {t}")
+        self.nextname = nextname
+
+        if not isinstance(contcondition, str):
+            t = type(contcondition)
+            raise TypeError(f"Expected str for contcondition."
+                            f"Found {t}")
+        self.contcondition = contcondition
+
+        self.maxunroll = maxunroll
+        self._statements = []
+        self.vtype = vtype
+
+    def __repr__(self):
+        s = f"<VLoop {self._loop_name}: {self.output_name}, starting as {self.start}, updated by {self.nextname}, until {self.contcondition}>"
+        return s
+
 class Condition(Statement):
     def __init__(self, expr, isterminal, conditions=None, name=None):
         if isinstance(expr, Expression):

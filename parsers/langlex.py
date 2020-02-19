@@ -24,6 +24,7 @@ class Lexer:
         'LOOPSTART',
         'LOOPEND',
         'LOOP',
+        'VLOOP',
         'COMMA',
         'COLON',
         'SEMICOLON',
@@ -131,6 +132,10 @@ class Lexer:
 
     def t_LOOP(self, t):
         r'LOOP'
+        return t
+
+    def t_VLOOP(self, t):
+        r'VLOOP'
         return t
 
     def t_CONDITIONNAME(self, t):
