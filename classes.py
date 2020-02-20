@@ -91,7 +91,7 @@ class Input(Statement):
         return s
 
 class Assignment(Statement):
-    def __init__(self, left, right, conditions=list()):
+    def __init__(self, left, right, conditions=None):
         if not isinstance(left, Variable):
             t = type(left)
             raise TypeError(f"Left operand of an "
@@ -106,13 +106,13 @@ class Assignment(Statement):
                             f"It is {t} instead")
         self.right = right
 
-        if not isinstance(conditions, list):
+        if conditions and not isinstance(conditions, list):
             t = type(conditions)
             raise TypeError(f"Conditions must be a list. "
                             f"It is {t} instead")
-        if not all(isinstance(x, Condition) for x in conditions):
+        if conditions and not all(isinstance(x, Condition) for x in conditions):
             raise TypeError("Conditions must be a list of Condition object")
-        self._conditions = conditions
+        self._conditions = [] if conditions is None else conditions
 
     def __repr__(self):
         s = f"<Assignment {self.left} <- {self.right}"
