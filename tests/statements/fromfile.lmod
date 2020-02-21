@@ -1,0 +1,5 @@
+INPUT file 15
+
+P: start <- INT 5 4
+
+FROMFILE fromfiletest file start 0 10
