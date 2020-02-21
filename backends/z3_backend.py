@@ -347,10 +347,10 @@ class Z3Backend(DefaultBackend):
         return self._model
 
     # this routine... if it works it's miracle
-    def generate_testcase(self):
+    def generate_testcase(self, varname="HEADER"):
         model = self.model
         self.log.info("Generating testcase")
-        header = self.variables['HEADER']
+        header = self.variables[varname]
         bitvec = model.eval(header)
         string_hex_rev = hex(bitvec.as_long())[2:]
         string_hex_rev = ('0' if (len(string_hex_rev) % 2 == 1) else "") + string_hex_rev
