@@ -17,6 +17,11 @@ import ply.yacc as yacc
 from .langlex import Lexer
 from classes import Variable, Assignment, Expression, Condition, Immediate, BoolImmediate, ConditionList, ConditionListEntry, Loop, VLoop, Input, Define
 
+def read_file(filename):
+    with open(filename, "rb") as fp:
+        buf = fp.read()
+        return buf
+
 class Parser:
     tokens = Lexer.tokens
     def parse_file(self, fname):
@@ -107,6 +112,22 @@ class Parser:
             log.warning(f"Defining constant {stmt.name}, but a variable with the same name already declared. Skipping")
         else:
             self.defines[stmt.name] = stmt.value
+
+    def p_input_fromfile(self, p):
+        'input : FROMFILE VARIABLE expression expression NUMBER NUMBER'
+        filename = os.path.join(self.pwd, p[2])
+        symbol = p[3]
+        start = p[4]
+        foffset = p[5]
+        nbytes = p[6]
+        buf = read_file(filename)
+        for n, b in enumerate(buf[foffset:nbytes]):
+            curroffset = Expression("ADD", start, Expression("IMM", Immediate(n)))
+            nb = Expression("Index", symbol, curroffset)
+            expr = Expression("EQ", nb, Expression("IMM", Immediate(b)))
+            cond = Condition(expr, isterminal=True, name=f"FROM_{filename}_{n}")
+            self.statements.append(cond)
+            self.conditions[cond.name] = cond
 
     def p_define_stmt(self, p):
         'define_stmt : DEFINE VARIABLE expression'
@@ -410,7 +431,7 @@ class Parser:
         log.critical("Syntax error in input! %s" % p)
         raise Exception(p)
 
-    def __init__(self):
+    def __init__(self, pwd=""):
         self.lexer = Lexer()
         self.loaded_types = {}
         self._variables = customdefdict(lambda x: Variable(x))
@@ -418,6 +439,7 @@ class Parser:
         self._defines = {}
         self._block_stack = deque()
         self._statements = []
+        self.pwd = pwd
         try:
             self.parser = yacc.yacc(module=self)
         except yacc.YaccError as e:

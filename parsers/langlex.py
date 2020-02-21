@@ -54,6 +54,8 @@ class Lexer:
         'TYPE',
         'SIZEOF',
         'DEFINE',
+
+        'FROMFILE',
     )
 
     def t_OPERATOR1(self, t):
@@ -155,6 +157,10 @@ class Lexer:
 
     def t_DEFINE(self, t):
         r'(DEFINE|Define|define)\s'
+        return t
+
+    def t_FROMFILE(self, t):
+        r'FROMFILE\s'
         return t
 
     def t_VARIABLE(self, t):
