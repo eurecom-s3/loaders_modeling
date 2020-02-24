@@ -121,7 +121,7 @@ class Parser:
         foffset = p[5]
         nbytes = p[6]
         buf = read_file(filename)
-        for n, b in enumerate(buf[foffset:nbytes]):
+        for n, b in enumerate(buf[foffset:foffset+nbytes]):
             curroffset = Expression("ADD", start, Expression("IMM", Immediate(n)))
             nb = Expression("Index", symbol, curroffset)
             expr = Expression("EQ", nb, Expression("IMM", Immediate(b)))
