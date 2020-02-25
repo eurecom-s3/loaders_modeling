@@ -7,10 +7,11 @@ import z3
 
 from .default_backend import DefaultBackend
 from classes import (Base, Immediate, Variable, Expression, Input,
-                     Assignment, Condition, Loop, VLoop)
+                     Assignment, Condition, Loop, VLoop, Optimization,
+                     Optimizations)
 
 class Z3Backend(DefaultBackend):
-    def __init__(self):
+    def __init__(self, enable_optimizations=False):
         super().__init__()
         self._solver = None
         self._model = None
@@ -43,6 +44,8 @@ class Z3Backend(DefaultBackend):
                           'VAR'   : self.VAR,
                           'IMM'   : self.IMM
         }
+        self.enable_optimizations = enable_optimizations
+        self.optimizations = []
         self.log = logging.getLogger(__name__)
         self.log.setLevel(logging.DEBUG)
         coloredlogs.install(level="INFO", logger=self.log)
@@ -304,17 +307,45 @@ class Z3Backend(DefaultBackend):
                                         conditions=[cond])
             self._exec_assignment(nextassignment)
 
+    def _exec_optimization(self, stmt):
+        strategy = stmt.strategy
+        expression = stmt.expression
+        if strategy in (Optimizations.MAXIMIZE, Optimizations.MINIMIZE):
+            self.enable_optimizations = True
+            self.optimizations.append((strategy,
+                                       self._eval_expression(expression)))
+        else:
+            log.error(f"Strategy {stmt.strategy} not implemented")
+            raise NotImplementedError
+
     _exec_table = {Input: _exec_input,
                    Assignment: _exec_assignment,
                    Condition: _exec_condition,
                    Loop: _exec_loop,
-                   VLoop: _exec_vloop}
+                   VLoop: _exec_vloop,
+                   Optimization: _exec_optimization
+    }
 
     def generate_solver(self):
+        if self.enable_optimizations:
+            return self.generate_optimizer()
         self.log.info("Generating solver")
         solver = z3.Solver()
         for name, condition in self.terminal_conditions.items():
             solver.assert_and_track(condition, name)
+        self._solver = solver
+        return solver
+
+    def generate_optimizer(self):
+        self.log.info("Generating optimizer")
+        solver = z3.Optimize()
+        for name, condition in self.terminal_conditions.items():
+            solver.assert_and_track(condition, name)
+        for strategy, expression in self.optimizations:
+            if strategy == Optimizations.MAXIMIZE:
+                solver.maximize(expression)
+            elif strategy == Optimizations.MINIMIZE:
+                solver.minimize(expression)
         self._solver = solver
         return solver
 
