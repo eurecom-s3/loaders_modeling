@@ -26,9 +26,10 @@ if __name__ == "__main__":
     coloredlogs.install(level="INFO", logger=log)
     from loops import VLoopTest
     from operators import BitwiseTest, AlgebraTest
-    from statements import FromFileTest
+    from statements import FromFileTest, OptimizationTest
 
     test(BitwiseTest)
     test(AlgebraTest)
     test(VLoopTest)
     test(FromFileTest)
+    test(OptimizationTest)

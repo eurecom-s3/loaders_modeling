@@ -1,0 +1,8 @@
+INPUT var1 4
+INPUT var2 4
+
+V1: UGE var1 10 term
+V2: ULE var2 10 term
+
+MINIMIZE var1
+MAXIMIZE var2
