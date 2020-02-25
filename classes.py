@@ -1,9 +1,16 @@
 import logging
 import coloredlogs
+from enum import Enum, unique, auto
+
 log = logging.getLogger(__name__)
 log.setLevel(logging.DEBUG)
 coloredlogs.install(level="INFO", logger=log)
 
+
+@unique
+class Optimizations(Enum):
+    MAXIMIZE = auto()
+    MINIMIZE = auto()
 
 class Statement(object):
     pass
@@ -277,6 +284,16 @@ class Define(Statement):
             raise TypeError
         self.name = name
         self.value = value
+
+class Optimization(Statement):
+    def __init__(self, strategy, expression):
+        if not isinstance(strategy, Optimizations):
+            t = type(strategy)
+            log.error(f"strategy expected to be one of the supported Optimizations. {t} found instead")
+            raise TypeErrorx
+        self.strategy = strategy
+        self.expression = expression
+
 
 class ConditionListEntry(Base):
     def __init__(self, name, negated=False):

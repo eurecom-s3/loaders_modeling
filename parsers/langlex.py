@@ -1,8 +1,9 @@
 import logging
 import ply.lex as lex
 import re
+from enum import Enum, auto, unique
 
-from classes import Base
+from classes import Base, Optimizations
 
 log = logging.getLogger(__name__)
 log.setLevel(logging.DEBUG)
@@ -56,6 +57,7 @@ class Lexer:
         'DEFINE',
 
         'FROMFILE',
+        'OPTIMIZE',
     )
 
     def t_OPERATOR1(self, t):
@@ -161,6 +163,14 @@ class Lexer:
 
     def t_FROMFILE(self, t):
         r'FROMFILE\s'
+        return t
+
+    def t_OPTIMIZE(self, t):
+        r'(MAXIMIZE|MINIMIZE)'
+        if 'MAX' in t.value:
+            t.value = Optimizations.MAXIMIZE
+        else:
+            t.value = Optimizations.MINIMIZE
         return t
 
     def t_VARIABLE(self, t):

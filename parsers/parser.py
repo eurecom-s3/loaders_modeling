@@ -15,7 +15,7 @@ import ply.yacc as yacc
 
 # Get the token map from the lexer.  This is required.
 from .langlex import Lexer
-from classes import Variable, Assignment, Expression, Condition, Immediate, BoolImmediate, ConditionList, ConditionListEntry, Loop, VLoop, Input, Define
+from classes import Variable, Assignment, Expression, Condition, Immediate, BoolImmediate, ConditionList, ConditionListEntry, Loop, VLoop, Input, Define, Optimization, Optimizations
 
 def read_file(filename):
     with open(filename, "rb") as fp:
@@ -112,6 +112,13 @@ class Parser:
             log.warning(f"Defining constant {stmt.name}, but a variable with the same name already declared. Skipping")
         else:
             self.defines[stmt.name] = stmt.value
+
+    def p_input_optimize(self, p):
+        'input : OPTIMIZE expression'
+        strategy = p[1]
+        expression = p[2]
+        opt = Optimization(strategy, expression)
+        self.statements.append(opt)
 
     def p_input_fromfile(self, p):
         'input : FROMFILE VARIABLE expression expression NUMBER NUMBER'
