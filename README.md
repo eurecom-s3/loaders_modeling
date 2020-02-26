@@ -26,3 +26,4 @@ The `classes.py` script contains the definition of the IR.
 - structures: mostly adapted from `angr`; here is the logic to parse C structures  
   - headers: the directory in which the parser looks for C header to use in models  
 - tests: very basic functional tests  
+- models: submodule containing the models of the loader of different OSs  
