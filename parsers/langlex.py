@@ -146,7 +146,11 @@ class Lexer:
         return t
 
     def t_LOADTYPES(self, t):
-        r'(LOAD|Load|load)\s'
+        r'(LOAD|Load|load)(REL|Rel|rel)?\s'
+        if 'rel' in t.value.lower():
+            t.value = True
+        else:
+            t.value = False
         return t
 
     def t_TYPE(self, t):

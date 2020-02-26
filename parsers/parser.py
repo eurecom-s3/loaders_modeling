@@ -159,7 +159,7 @@ class Parser:
         self.defines.update(new_defs)
 
     def p_load_stmt(self, p):
-        'load_stmt : load_preamble VARIABLE VARIABLE'
+        'load_stmt : LOADTYPES VARIABLE VARIABLE'
         if p[3] == 'linux':
             os = 'DEFAULT'
         else:
@@ -167,16 +167,8 @@ class Parser:
         p[0] = (p[2], os, p[1])
 
     def p_load_stmt_2(self, p):
-        'load_stmt : load_preamble VARIABLE'
+        'load_stmt : LOADTYPES VARIABLE'
         p[0] = (p[2], "DEFAULT", p[1])
-
-    def p_load_preamble(self, p):
-        'load_preamble : LOADTYPES EXCLAMATION'
-        p[0] = True
-
-    def p_load_preamble2(self, p):
-        'load_preamble : LOADTYPES'
-        p[0] = False
 
     def p_input_stmt_type(self, p):
         'input_stmt : INPUT VARIABLE constant TYPE VARIABLE'
