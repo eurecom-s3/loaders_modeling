@@ -5,13 +5,13 @@ from tests import Test
 from parsers import Parser
 from backends import Z3Backend
 
-class VLoopTest(Test):
-    testfile = "tests/loops/vloop.lmod"
+class ConditionalLoopTest(Test):
+    testfile = "tests/loops/conditionalloop.lmod"
 
     @staticmethod
     def run():
         parser = Parser()
-        parser.parse_file(VLoopTest.testfile)
+        parser.parse_file(ConditionalLoopTest.testfile)
 
         backend = Z3Backend()
         backend.exec_statements(parser.statements)
@@ -21,10 +21,8 @@ class VLoopTest(Test):
         assert model, "Model unsat. Test failed"
 
         testcase = backend.generate_testcase()
-        expected = b''.join([x.to_bytes(1, 'little') for x in range(0x10)])
-        assert testcase[:0x10] == expected, "First part of the testcase not as expected"
-        assert all(x == 0 for x in testcase[0x10:]), "Second part of the testcase not as expected"
-        return True
+        expected = b'\x01' * 4
+        assert(testcase[4:8] == expected)
 
 if __name__ == "__main__":
-    VLoopTest.run()
+    ConditionalLoopTest.run()

@@ -1,0 +1,26 @@
+DEFINE SIZE 15
+DEFINE STRUCTSIZE 1
+DEFINE MAXITERATION 10
+
+INPUT HEADER SIZE
+P: enableLoop1 <- HEADER[0]
+V1: NEQ enableLoop1 0
+V99: EQ enableLoop1 1 term
+
+
+## This loop will be executed
+P: start <- INT 4 4
+P: count <- INT 4 4
+L1(V1): var1 <- LOOP(HEADER, start, 1, count, 4)
+    V3: Eq var1 1 term
+END L1
+
+
+## This loop won't be executed
+P: enableLoop2 <- HEADER[1]
+V2: NEQ enableLoop2 0
+V98: EQ enableLoop2 0 term
+L2(V2): var2 <- LOOP(HEADER, start, 1, count, 4)
+    V4: Eq var2 2 term
+END L2
+
