@@ -103,7 +103,12 @@ class Parser:
             log.critical("Loop end does not match current loop name")
             raise ValueError
         log.debug("Loop end " + str(p[1][0]))
-        self.statements.append(loop)
+        if len(self._block_stack) == 0:
+            self.statements.append(loop)
+        else:
+            block = self._block_stack.pop()
+            block.add_statement(loop)
+            self._block_stack.append(block)
 
     def p_input_define(self, p):
         'input : define_stmt'
@@ -252,9 +257,16 @@ class Parser:
         p[0] = p[1]
 
     def p_loopstart_stmt(self, p):
-        'loopstart : LOOPSTART COLON VARIABLE ARROW LOOP LPAREN expression COMMA expression COMMA NUMBER COMMA expression COMMA NUMBER RPAREN'
+        '''loopstart : LOOPSTART COLON VARIABLE ARROW LOOP LPAREN expression COMMA expression COMMA NUMBER COMMA expression COMMA NUMBER RPAREN
+                     | LOOPSTART conditionlist  COLON VARIABLE ARROW LOOP LPAREN expression COMMA expression COMMA NUMBER COMMA expression COMMA NUMBER RPAREN
+'''
         loopindex = p[1]
-        loop = Loop(p[1], p[3], p[7], p[9], p[11], p[13], p[15])
+        isconditional = len(p) == 18
+        if not isconditional:
+            loop = Loop(p[1], p[3], p[7], p[9], p[11], p[13], p[15])
+        else:
+            conds = [self.conditions[c] for c in p[2].names]
+            loop = Loop(p[1], p[4], p[8], p[10], p[12], p[14], p[16], conditions=conds)
         p[0] = (loopindex, loop)
 
     def p_loopstart_stmt_2(self, p):

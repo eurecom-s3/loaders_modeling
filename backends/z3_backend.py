@@ -209,7 +209,7 @@ class Z3Backend(DefaultBackend):
         size = z3expr.size()
         self.variables[var.name] = z3.BitVecVal(0, size)
         self.variables[var.name] = z3.If(
-            z3.And(*[self._eval_condition(x) for x in stmt._conditions]),
+            self._eval_condition_list(stmt._conditions),
             z3expr,
             z3.BitVecVal(0, size))
 
@@ -224,12 +224,15 @@ class Z3Backend(DefaultBackend):
             return self._eval_expression(condition.expr)
         if condition.isterminal:
             return z3.If(
-                z3.And(*[self._eval_condition(x) for x in condition.conditions]),
+                self._eval_condition_list(condition.conditions),
                 self._eval_expression(condition.expr),
                 z3.BoolVal(True))
 
         return z3.And(self._eval_expression(condition.expr),
-                      *[self._eval_condition(x) for x in condition.conditions])
+                      self._eval_condition_list(condition.conditions))
+
+    def _eval_condition_list(self, conditions):
+        return z3.And(*[self._eval_condition(x) for x in conditions])
 
     def _exec_condition(self, stmt):
         self.conditions[stmt.name] = self._eval_condition(stmt)
@@ -244,6 +247,7 @@ class Z3Backend(DefaultBackend):
         structsize = stmt.structsize
         startpos = stmt.startpos
         count = stmt.count
+        conditions = stmt._conditions
         for index in range(stmt.maxunroll):
             pref = cond_prefix + f"{index}_"
             self.log.debug(f"Unrolling loop {stmt}. Index {index}")
@@ -253,12 +257,13 @@ class Z3Backend(DefaultBackend):
                                                     Expression("ADD", startpos,
                                                                index*structsize),
                                                     structsize),
-                                         [lcond])
+                                         [*conditions, lcond])
             self._exec_statement(var_assignement)
             for s in statements:
                 if isinstance(s, Condition):
                     s = s.clone()
                     s.add_prefix(pref)
+                s._conditions.extend(conditions)
                 s._conditions.append(lcond)
                 self._exec_statement(s)
 
