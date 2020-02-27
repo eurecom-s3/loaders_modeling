@@ -100,19 +100,39 @@ If, instead, the output variable of the statement was already defined (i.e., in 
 ### Fixed-increment Loop Statements
 #### Syntax (start)
 `L<number>: <output> <- LOOP(<input>, <startingoffset>, <structsize>, <count>, <maxunroll>) [AS <type>]`  
-`<output> variable name`  
-`<input>: expression`  
-`<startingoffset>: expression`  
-`<structsize>: immediate`  
-`<count>: expression`  
-`<maxunroll>: integer`  
+`<output>`: variable name  
+`<input>`: expression  
+`<startingoffset>`: expression  
+`<structsize>`: immediate  
+`<count>`: expression  
+`<maxunroll>`: integer  
 #### Syntax (end)
 `END L<number>`
 #### Description
-This statement declares a loop iterating over an array of structures.
+This statement declares a loop iterating over an array of structures.  
+An iteration is made up of all the statements between the start of the loop and its end.  
 At the n-th iteration of the loop the output value takes the n-th element of the array.  
 The `input` argument is the expression on which to slice upon to extract the elements of the array.  
 The `startinoffset` is an expression that indicates the offset (in bytes) at which the array start within the `input` variable.  
 `structsize` represents the size (in bytes) of each element of the array. It must be an immediate.  
 `count` is an expression representing the number of iterations of the loop.  
 `maxunroll` is an integer used _only during testcase generation_ as an upper-bound for `count`. Its role is fundamental due to the lack of loop supports in SMT solvers. In fact, loops in our language are unrolled to overcome this limitation.
+
+### Generic Loop Statements
+#### Syntax (start)
+`L<number>: <output> <- VLOOP(<start>, <next>, <condition>, <maxunroll>)`
+`<output>`: variable name  
+`<start>`: expression  
+`<next>`: variable name  
+`<condition>`: condition name  
+`<maxunroll>`: integer  
+#### Syntax (end)
+`END L<number>`
+#### Description
+Declares a generic loop to execute the same set of statements multiple times up until a certain condition is met.  
+At each iteration the `output` variable takes a different value, according to the following scheme:
+1. During the first iteration, its value is set to that of the `start` expression  
+2. In the following iteration, its value is set to that of the `next` variable  
+The `next` variable must be set inside the body of the loop, by means of a `P` statement.  
+`condition` is the identifier of a soft-constraint declared within the body of the loop.  
+The semantics of `maxunroll` is the same as for the `fixed-increment loop` statements.  
