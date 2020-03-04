@@ -15,34 +15,36 @@ class Z3Backend(DefaultBackend):
         super().__init__()
         self._solver = None
         self._model = None
-        self.z3_funcs = { 'ADD'   : z3.Sum,
-                          'SUB'   : self.SUB,
-                          'MUL'   : self.MUL,
-                          'DIV'   : self.DIV,
-                          'UDIV'  : z3.UDiv,
-                          'MOD'   : self.MOD,
-                          'AND'   : z3.And,
-                          'OR'    : z3.Or,
-                          'NOT'   : z3.Not,
-                          'ULE'   : z3.ULE,
-                          'UGE'   : z3.UGE,
-                          'ULT'   : z3.ULT,
-                          'UGT'   : z3.UGT,
-                          'EQ'    : self.EQ,
-                          'NEQ'   : self.NEQ,
-                          'GE'    : self.GE,
-                          'LE'    : self.LE,
-                          'GT'    : self.GT,
-                          'LT'    : self.LT,
-                          'BITOR' : self.BITOR,
-                          'BITAND': self.BITAND,
-                          'BITNOT': self.BITNOT,
-                          'Slice' : self.Slice,
-                          'Index' : self.Slice,
-                          'ISPOW2': self.ISPOW2,
-                          'INT'   : self.INT,
-                          'VAR'   : self.VAR,
-                          'IMM'   : self.IMM
+        self.z3_funcs = { 'ADD'       : z3.Sum,
+                          'SUB'       : self.SUB,
+                          'MUL'       : self.MUL,
+                          'DIV'       : self.DIV,
+                          'UDIV'      : z3.UDiv,
+                          'MOD'       : self.MOD,
+                          'AND'       : z3.And,
+                          'OR'        : z3.Or,
+                          'NOT'       : z3.Not,
+                          'ULE'       : z3.ULE,
+                          'UGE'       : z3.UGE,
+                          'ULT'       : z3.ULT,
+                          'UGT'       : z3.UGT,
+                          'EQ'        : self.EQ,
+                          'NEQ'       : self.NEQ,
+                          'GE'        : self.GE,
+                          'LE'        : self.LE,
+                          'GT'        : self.GT,
+                          'LT'        : self.LT,
+                          'BITOR'     : self.BITOR,
+                          'BITAND'    : self.BITAND,
+                          'BITNOT'    : self.BITNOT,
+                          'Slice'     : self.Slice,
+                          'Index'     : self.Slice,
+                          'ISPOW2'    : self.ISPOW2,
+                          'ALIGNUP'   : self.ALIGNUP,
+                          'ALIGNDOWN' : self.ALIGNDOWN,
+                          'INT'       : self.INT,
+                          'VAR'       : self.VAR,
+                          'IMM'       : self.IMM
         }
         self.enable_optimizations = enable_optimizations
         self.optimizations = []
@@ -111,6 +113,14 @@ class Z3Backend(DefaultBackend):
         return a > b
 
     @staticmethod
+    def ALIGNUP(a, b):
+        return (a + b - 1) & -b
+
+    @staticmethod
+    def ALIGNDOWN(a, b):
+        return a & -b
+
+    @staticmethod
     def INT(a, b):
         a = a if isinstance(a, int) else a.as_long()
         b = b if isinstance(b, int) else b.as_long()
@@ -137,7 +147,7 @@ class Z3Backend(DefaultBackend):
     def VAR(self, var):
         return self.variables[var.name]
 
-    z3_funcs_sized = {'ADD', 'SUB', 'MUL', 'UDIV', 'MOD', 'EQ', 'NEQ', 'GE', 'LE', 'GT', 'LT', 'ULE', 'UGE', 'UGT', 'ULT', 'BITOR', 'BITAND'}
+    z3_funcs_sized = {'ADD', 'SUB', 'MUL', 'UDIV', 'MOD', 'EQ', 'NEQ', 'GE', 'LE', 'GT', 'LT', 'ULE', 'UGE', 'UGT', 'ULT', 'BITOR', 'BITAND', 'ALIGNUP', 'ALIGNDOWN'}
     z3_funcs_bool  = {'OR', 'AND', 'NOT'}
     z3_funcs_unsigned = {'BITOR', 'BITAND', 'ULE', 'ULT', 'UGT', 'UGE', 'EQ', 'NEQ'}
 
