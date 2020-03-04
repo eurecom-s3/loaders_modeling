@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import logging
 import os.path
 
 from tests import Test
@@ -17,6 +18,7 @@ class OptimizationTest(Test):
         parser.parse_file(OptimizationTest.testfile)
 
         backend = Z3Backend()
+        backend.log.setLevel(logging.ERROR)
         backend.exec_statements(parser.statements)
         solver = backend.solver
         model = backend.model

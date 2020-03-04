@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+
+import logging
 import z3
 
 from tests import Test
@@ -14,6 +16,7 @@ class BitwiseTest(Test):
         parser = Parser()
         parser.parse_file(BitwiseTest.testfile)
         backend = Z3Backend()
+        backend.log.setLevel(logging.ERROR)
         backend.exec_statements(parser.statements)
         solver = backend.generate_solver()
         input = backend.variables['VARIABLE']

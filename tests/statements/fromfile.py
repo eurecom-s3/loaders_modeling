@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import logging
 import os.path
 
 from tests import Test
@@ -15,6 +16,7 @@ class FromFileTest(Test):
         parser.parse_file(FromFileTest.testfile)
 
         backend = Z3Backend()
+        backend.log.setLevel(logging.ERROR)
         backend.exec_statements(parser.statements)
         solver = backend.solver
         model = backend.model

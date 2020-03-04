@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import logging
 import z3
 
 from tests import Test
@@ -14,6 +15,7 @@ class ConditionalLoopTest(Test):
         parser.parse_file(ConditionalLoopTest.testfile)
 
         backend = Z3Backend()
+        backend.log.setLevel(logging.ERROR)
         backend.exec_statements(parser.statements)
         solver = backend.solver
         model = backend.model
