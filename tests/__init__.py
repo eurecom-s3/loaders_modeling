@@ -25,7 +25,7 @@ if __name__ == "__main__":
     log = logging.getLogger(__name__)
     coloredlogs.install(level="INFO", logger=log)
     from loops import VLoopTest, ConditionalLoopTest
-    from operators import BitwiseTest, AlgebraTest
+    from operators import BitwiseTest, AlgebraTest, AlignmentTest
     from statements import FromFileTest, OptimizationTest
 
     test(BitwiseTest)

@@ -1,0 +1,7 @@
+INPUT VARIABLE 4
+
+P: alup <- ALIGNUP VARIABLE 0x1000
+P: aldown <- ALIGNDOWN VARIABLE 0x1000
+V1: EQ VARIABLE 4095 term
+V2: EQ alup 4096 term
+V3: EQ aldown 0 term
