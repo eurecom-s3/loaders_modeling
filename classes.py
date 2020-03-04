@@ -241,7 +241,7 @@ class Condition(Statement):
         if isinstance(expr, Expression):
             self.expr = expr
         elif isinstance(expr, bool):
-            self.expr = Expression("IMM", expr)
+            self.expr = Expression("IMM", Immediate(expr))
         else:
             raise TypeError
         self.isterminal = bool(isterminal)
