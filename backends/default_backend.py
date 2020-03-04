@@ -16,6 +16,7 @@ class DefaultBackend(object):
                 operands_new.append(self._eval_expression(op))
             else:
                 operands_new.append(op)
+        self.log.debug(f"\n{expr.pprint()}")
         return self.dispatch(opcode, *operands_new)
 
     def _exec_statement(self, stmt):
