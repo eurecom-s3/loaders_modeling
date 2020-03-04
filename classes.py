@@ -58,11 +58,26 @@ class Expression(Base):
         if len(operands) != self.OPCODES[opcode]:
             raise ValueError(f"Opcode {opcode} expects {self.OPCODES[opcode]}."
                              f"{len(operands)} provided instead.")
+        if any([type(op) not in (Variable, Immediate, Expression) for op in operands]):
+            raise TypeError("Operands of not supported types")
+
         self.operands = operands
 
     def __repr__(self):
         tmp = f"<Expression ({self.opcode} {self.operands})>"
         return tmp
+
+    def pprint(self, spacing="    "):
+        if self.opcode in ("VAR", "IMM"):
+            return self.operands[0].pprint()
+        ret = ""
+        ret += f"{self.opcode}(\n"
+        args = ",\n".join(
+            ["\n".join([(spacing + line) for line in x.pprint().split("\n")])
+             for x in self.operands])
+        ret += args
+        ret += "\n)"
+        return ret
 
 class Immediate(object):
     def __init__(self, value):
@@ -70,6 +85,9 @@ class Immediate(object):
 
     def __repr__(self):
         return f"<Immediate {self.value}>"
+
+    def pprint(self):
+        return str(self.value)
 
 class BoolImmediate(Immediate):
     def __init__(self, value):
@@ -87,6 +105,9 @@ class Variable(object):
     def __repr__(self):
         t = "" if not self.type else f" of type {self.type}"
         return f"<Variable {self.name}{t}>"
+
+    def pprint(self):
+        return self.name
 
 class Input(Statement):
     def __init__(self, var, size):

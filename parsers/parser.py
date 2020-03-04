@@ -160,7 +160,8 @@ class Parser:
         new_types = module.parse_file(fcontent)
         new_defs = module.preprocess_defs(fcontent)
         self.loaded_types.update(new_types[1])
-        new_defs = {x: Expression("IMM", y) for x, y in new_defs.items()}
+        new_defs = {x: Expression("IMM", Immediate(y))
+                    for x, y in new_defs.items()}
         self.defines.update(new_defs)
 
     def p_load_stmt(self, p):

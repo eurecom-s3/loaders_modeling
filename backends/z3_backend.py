@@ -251,12 +251,12 @@ class Z3Backend(DefaultBackend):
         for index in range(stmt.maxunroll):
             pref = cond_prefix + f"{index}_"
             self.log.debug(f"Unrolling loop {stmt}. Index {index}")
-            lcond = Condition(Expression("UGT", count, index), False)
+            lcond = Condition(Expression("UGT", count, Expression("IMM", Immediate(index))), False)
             var_assignement = Assignment(ovar,
                                          Expression("Slice", ivar,
                                                     Expression("ADD", startpos,
-                                                               index*structsize),
-                                                    structsize),
+                                                               Expression("IMM", Immediate(index*structsize))),
+                                                    Expression("IMM", Immediate(structsize))),
                                          [*conditions, lcond])
             self._exec_statement(var_assignement)
             for s in statements:
