@@ -1,0 +1,4 @@
+INPUT variable 4
+
+V1: UGT variable 15 term
+V2: EQ BITAND variable 0x0000ffff 0 term
