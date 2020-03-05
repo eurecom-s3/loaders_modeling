@@ -27,7 +27,7 @@ if __name__ == "__main__":
     from loops import VLoopTest, ConditionalLoopTest
     from operators import BitwiseTest, AlgebraTest, AlignmentTest
     from statements import FromFileTest, OptimizationTest
-    from functional import PositiveCombinationTest
+    from functional import PositiveCombinationTest, NegativeCombinationTest
 
     test(BitwiseTest)
     test(AlgebraTest)
@@ -36,3 +36,4 @@ if __name__ == "__main__":
     test(FromFileTest)
     test(OptimizationTest)
     test(PositiveCombinationTest)
+    test(NegativeCombinationTest)
