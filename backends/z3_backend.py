@@ -285,6 +285,7 @@ class Z3Backend(DefaultBackend):
         nextvar = stmt.nextname
         condname = stmt.contcondition
         maxunroll = stmt.maxunroll
+        conditions = stmt._conditions
 
         if condname in self.conditions:
             cond = self.conditions[condname]
@@ -293,7 +294,7 @@ class Z3Backend(DefaultBackend):
             self.conditions[condname] = cond
 
         # Assign the first value
-        initial_assignement = Assignment(ovar, start)
+        initial_assignement = Assignment(ovar, start, [*conditions])
         self._exec_assignment(initial_assignement)
         # Unroll
         for index in range(stmt.maxunroll):
@@ -313,13 +314,13 @@ class Z3Backend(DefaultBackend):
                         nextcond = s
                     # change its name, adding the prefix
                     s.add_prefix(pref)
-                s._conditions.append(cond)
+                s._conditions.extend([*conditions, cond])
                 self._exec_statement(s)
 
             cond = nextcond
             nextcond = None
             nextassignment = Assignment(ovar, Expression("VAR", nextvar),
-                                        conditions=[cond])
+                                        conditions=[*conditions, cond])
             self._exec_assignment(nextassignment)
 
     def _exec_optimization(self, stmt):

@@ -207,7 +207,7 @@ class Loop(Statement):
         return s
 
 class VLoop(Loop):
-    def __init__(self, loop_name, output_name, start, nextname, contcondition, maxunroll, vtype=None):
+    def __init__(self, loop_name, output_name, start, nextname, contcondition, maxunroll, vtype=None, conditions=None):
         self._loop_name = loop_name
         self.output_name = output_name
         if not isinstance(start, Expression):
@@ -231,6 +231,7 @@ class VLoop(Loop):
         self.maxunroll = maxunroll
         self._statements = []
         self.vtype = vtype
+        self._conditions = [] if conditions is None else conditions
 
     def __repr__(self):
         s = f"<VLoop {self._loop_name}: {self.output_name}, starting as {self.start}, updated by {self.nextname}, until {self.contcondition}>"
