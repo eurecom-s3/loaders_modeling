@@ -60,6 +60,9 @@ if __name__ == "__main__":
     for b in z3_models_assert[1:]:
         backend &= b
 
+    for b in z3_models_negate:
+        backend &= ~b
+
     solver = backend.solver
     model = backend.model
     if model:
