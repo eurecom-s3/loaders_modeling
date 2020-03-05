@@ -11,8 +11,10 @@ from classes import (Base, Immediate, Variable, Expression, Input,
                      Optimizations)
 
 class Z3Backend(DefaultBackend):
-    def __init__(self, enable_optimizations=False):
+    def __init__(self, name="", voi=None, enable_optimizations=False):
         super().__init__()
+        self.name = name
+        self.voi = voi
         self._solver = None
         self._model = None
         self.z3_funcs = { 'ADD'       : z3.Sum,
@@ -426,3 +428,25 @@ class Z3Backend(DefaultBackend):
         self._exec_statement(constraint)
         self.generate_solver()
         return self.check_sat()
+
+    def __and__(self, other):
+        if other.voi != self.voi:
+            log.error("Variable of interest (voi) differs in the two models")
+        ret = Z3Backend(name=f"{self.name}&{other.name}", voi=self.voi)
+
+        for condname, cond in self.terminal_conditions.items():
+            ret.terminal_conditions[f"{self.name}_{condname}"] = cond
+        for condname, con in other.terminal_conditions.items():
+            ret.terminal_conditions[f"{other.name}_{condname}"] = cond
+
+        ret.variables[f'{self.name}_{ret.voi}'] = self.variables[ret.voi]
+        ret.variables[f'{other.name}_{ret.voi}'] = other.variables[ret.voi]
+        ret.variables[f'{ret.voi}'] = self.variables[ret.voi]
+        voicond = Condition(
+            Expression("EQ",
+                       Expression("VAR", Variable(f'{self.name}_{ret.voi}')),
+                       Expression("VAR", Variable(f'{other.name}_{ret.voi}')),
+            ),
+            isterminal=True, name="voicond")
+        ret._exec_condition(voicond)
+        return ret
