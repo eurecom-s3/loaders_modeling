@@ -436,7 +436,7 @@ class Z3Backend(DefaultBackend):
 
         for condname, cond in self.terminal_conditions.items():
             ret.terminal_conditions[f"{self.name}_{condname}"] = cond
-        for condname, con in other.terminal_conditions.items():
+        for condname, cond in other.terminal_conditions.items():
             ret.terminal_conditions[f"{other.name}_{condname}"] = cond
 
         ret.variables[f'{self.name}_{ret.voi}'] = self.variables[ret.voi]
