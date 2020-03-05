@@ -450,3 +450,13 @@ class Z3Backend(DefaultBackend):
             isterminal=True, name="voicond")
         ret._exec_condition(voicond)
         return ret
+
+    def __invert__(self):
+        ret = Z3Backend(name=f"~{self.name}", voi=self.voi)
+        ret.variables[f'{ret.voi}'] = self.variables[ret.voi]
+        conditions = []
+        for condname, cond in self.terminal_conditions.items():
+            ncond = z3.Not(cond)
+            conditions.append(ncond)
+        ret.terminal_conditions['negated'] = z3.Or(conditions)
+        return ret
