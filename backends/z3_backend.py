@@ -39,6 +39,8 @@ class Z3Backend(DefaultBackend):
                           'BITOR'     : self.BITOR,
                           'BITAND'    : self.BITAND,
                           'BITNOT'    : self.BITNOT,
+                          'SHR'       : self.SHR,
+                          'SHL'       : self.SHL,
                           'Slice'     : self.Slice,
                           'Index'     : self.Slice,
                           'ISPOW2'    : self.ISPOW2,
@@ -90,6 +92,14 @@ class Z3Backend(DefaultBackend):
     @staticmethod
     def BITNOT(a):
         return ~a
+
+    @staticmethod
+    def SHR(a, b):
+        return a >> b
+
+    @staticmethod
+    def SHL(a, b):
+        return a << b
 
     @staticmethod
     def ISPOW2(a):

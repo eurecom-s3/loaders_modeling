@@ -46,6 +46,8 @@ class Expression(Base):
                'BITOR'      : 2,
                'BITAND'     : 2,
                'BITNOT'     : 1,
+               'SHR'        : 2,
+               'SHL'        : 2,
                'Slice'      : 3,
                'Index'      : 2,
                'ISPOW2'     : 1,
