@@ -37,6 +37,10 @@ class Parser:
                 result = self.parser.parse(s)
                 if result:
                     print(result)
+            # Check that there are no un-ended loops
+            if len(self._block_stack) != 0:
+                log.error(f"Un-ended statement: {self._block_stack[0]}")
+                raise ValueError
 
     @property
     def variables(self):
