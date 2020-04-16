@@ -1,0 +1,8 @@
+INPUT inputvar 4
+
+V1: EQ inputvar 0x1234 term
+P: outvar <- inputvar
+
+V2: ULE inputvar 0x1
+
+P(V2): outvar <- ADD inputvar 1

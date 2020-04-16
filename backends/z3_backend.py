@@ -224,16 +224,17 @@ class Z3Backend(DefaultBackend):
         self.log.debug(f"Executing unconditional assignemnt {stmt}")
         var = stmt.left
         expr = stmt.right
-        if var.name not in self.variables:
-            self.log.warning(f"Variable {var.name} declared in a conditional assignement. Its value in case the condition is not satisfied defaults to 0")
-
         z3expr = self._eval_expression(expr)
         size = z3expr.size()
-        self.variables[var.name] = z3.BitVecVal(0, size)
+
+        if var.name not in self.variables:
+            self.log.warning(f"Variable {var.name} declared in a conditional assignement. Its value in case the condition is not satisfied defaults to 0")
+            self.variables[var.name] = z3.BitVecVal(0, size)
+
         self.variables[var.name] = z3.If(
             self._eval_condition_list(stmt._conditions),
             z3expr,
-            z3.BitVecVal(0, size))
+            self.variables[var.name])
 
     def _exec_assignment(self, stmt):
         if stmt.conditional:
