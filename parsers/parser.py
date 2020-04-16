@@ -235,7 +235,9 @@ class Parser:
         cond = p[4]
         cond.name = p[1]
         conditionslist = p[2]
-        conds = [self.conditions[c] for c in conditionslist.names]
+        conds = [~self.conditions[c.name] if c.negated else
+                 self.conditions[c.name]
+                 for c in conditionslist]
         cond.conditions = conds
         p[0] = (p[1], cond)
 
@@ -343,11 +345,11 @@ class Parser:
 
     def p_conditionlistentry_negcondition(self, p):
         'conditionlistentry : EXCLAMATION CONDITIONNAME'
-        p[0] = ConditionListEntry(p[2], False)
+        p[0] = ConditionListEntry(p[2], True)
 
     def p_conditionlistentry_condition(self, p):
         'conditionlistentry : CONDITIONNAME'
-        p[0] = ConditionListEntry(p[1], True)
+        p[0] = ConditionListEntry(p[1])
 
     def p_condition_terminal(self, p):
         'conditionexpr : expression TERMINATOR'
