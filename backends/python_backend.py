@@ -87,7 +87,9 @@ class PythonBackend(DefaultBackend):
                        'ISPOW2': self.ISPOW2,
                        'INT'   : self.INT,
                        'VAR'   : self.VAR,
-                       'IMM'   : self.IMM
+                       'IMM'   : self.IMM,
+                       'SHR'   : self.SHR,
+                       'SHL'   : self.SHL,
         }
         self.log = logging.getLogger(__name__)
         self.log.setLevel(logging.DEBUG)
@@ -244,6 +246,18 @@ class PythonBackend(DefaultBackend):
         if type(val) == bool:
             return val
         return pack(val, 'all', endianness='little')
+
+    @staticmethod
+    @sized()
+    @unsigned()
+    def SHR(a, b):
+        return a >> b
+
+    @staticmethod
+    @sized()
+    @unsigned()
+    def SHL(a, b):
+        return a << b
 
     def VAR(self, var):
         return self.variables[var.name]
