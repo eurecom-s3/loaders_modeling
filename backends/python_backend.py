@@ -99,14 +99,14 @@ class PythonBackend(DefaultBackend):
 
 
     @staticmethod
-    @sized(sign=True)
-    @signed()
+    @sized(sign=False)
+    @unsigned()
     def ADD(a, b):
         return a + b
 
     @staticmethod
-    @sized(sign=True)
-    @signed()
+    @sized(sign=False)
+    @unsigned()
     def SUB(a, b):
         return a - b
 
