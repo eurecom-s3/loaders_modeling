@@ -228,6 +228,8 @@ class PythonBackend(DefaultBackend):
         return a > b
 
     @staticmethod
+    @sized(skipret=True)
+    @unsigned(skipret=True)
     def INT(a, b):
         return pack(a, b*8, endianness="little")
 
