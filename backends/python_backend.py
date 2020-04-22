@@ -159,8 +159,8 @@ class PythonBackend(DefaultBackend):
         return a & b
 
     @staticmethod
-    @sized()
-    @unsigned()
+    @sized(sign=True)
+    @signed()
     def BITNOT(a):
         return ~a
 
