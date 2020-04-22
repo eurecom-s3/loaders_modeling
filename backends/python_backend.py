@@ -345,7 +345,10 @@ class PythonBackend(DefaultBackend):
         startpos = stmt.startpos
         count = unpack(self._eval_expression(stmt.count), 'all',
                        endianness='little')
-        structsize = Expression("IMM", Immediate(stmt.structsize))
+        structsize = Expression("INT",
+                                Expression("IMM",
+                                           Immediate(stmt.structsize)),
+                                Expression("IMM", Immediate(4)))
 
         self.log.debug(f"Executing loop {name} {count} times")
         for iteration in range(count):
