@@ -60,36 +60,38 @@ def signed(skipargs=(), skipret=False):
 class PythonBackend(DefaultBackend):
     def __init__(self):
         super().__init__()
-        self.funcs = { 'ADD'   : self.ADD,
-                       'SUB'   : self.SUB,
-                       'MUL'   : self.MUL,
-                       'DIV'   : self.DIV,
-                       'UDIV'  : self.UDIV,
-                       'MOD'   : self.MOD,
-                       'AND'   : self.And,
-                       'OR'    : self.Or,
-                       'NOT'   : self.Not,
-                       'ULE'   : self.ULE,
-                       'UGE'   : self.UGE,
-                       'ULT'   : self.ULT,
-                       'UGT'   : self.UGT,
-                       'EQ'    : self.EQ,
-                       'NEQ'   : self.NEQ,
-                       'GE'    : self.GE,
-                       'LE'    : self.LE,
-                       'GT'    : self.GT,
-                       'LT'    : self.LT,
-                       'BITOR' : self.BITOR,
-                       'BITAND': self.BITAND,
-                       'BITNOT': self.BITNOT,
-                       'Slice' : self.Slice,
-                       'Index' : self.Slice,
-                       'ISPOW2': self.ISPOW2,
-                       'INT'   : self.INT,
-                       'VAR'   : self.VAR,
-                       'IMM'   : self.IMM,
-                       'SHR'   : self.SHR,
-                       'SHL'   : self.SHL,
+        self.funcs = { 'ADD'         : self.ADD,
+                       'SUB'         : self.SUB,
+                       'MUL'         : self.MUL,
+                       'DIV'         : self.DIV,
+                       'UDIV'        : self.UDIV,
+                       'MOD'         : self.MOD,
+                       'AND'         : self.And,
+                       'OR'          : self.Or,
+                       'NOT'         : self.Not,
+                       'ULE'         : self.ULE,
+                       'UGE'         : self.UGE,
+                       'ULT'         : self.ULT,
+                       'UGT'         : self.UGT,
+                       'EQ'          : self.EQ,
+                       'NEQ'         : self.NEQ,
+                       'GE'          : self.GE,
+                       'LE'          : self.LE,
+                       'GT'          : self.GT,
+                       'LT'          : self.LT,
+                       'BITOR'       : self.BITOR,
+                       'BITAND'      : self.BITAND,
+                       'BITNOT'      : self.BITNOT,
+                       'Slice'       : self.Slice,
+                       'Index'       : self.Slice,
+                       'ISPOW2'      : self.ISPOW2,
+                       'INT'         : self.INT,
+                       'VAR'         : self.VAR,
+                       'IMM'         : self.IMM,
+                       'SHR'         : self.SHR,
+                       'SHL'         : self.SHL,
+                       'ALIGNUP'     : self.ALIGNUP,
+                       'ALIGNDOWN'   : self.ALIGNDOWN,
         }
         self.log = logging.getLogger(__name__)
         self.log.setLevel(logging.DEBUG)
@@ -260,6 +262,18 @@ class PythonBackend(DefaultBackend):
     @unsigned()
     def SHL(a, b):
         return a << b
+
+    @staticmethod
+    @sized()
+    @unsigned()
+    def ALIGNUP(a, b):
+        return (a + b - 1) & -b
+
+    @staticmethod
+    @sized()
+    @unsigned()
+    def ALIGNDOWN(a, b):
+        return a & -b
 
     def VAR(self, var):
         return self.variables[var.name]
