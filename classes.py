@@ -13,7 +13,8 @@ class Optimizations(Enum):
     MINIMIZE = auto()
 
 class Statement(object):
-    pass
+    def __init__(self):
+        self.lineno = 0
 
 class Base(object):
     def __sub__(self, other):
@@ -116,6 +117,7 @@ class Variable(object):
 
 class Input(Statement):
     def __init__(self, var, size):
+        super(Input, self).__init__()
         self.var = var
         self.size = size
 
@@ -125,6 +127,7 @@ class Input(Statement):
 
 class Assignment(Statement):
     def __init__(self, left, right, conditions=None):
+        super(Assignment, self).__init__()
         if not isinstance(left, Variable):
             t = type(left)
             raise TypeError(f"Left operand of an "
@@ -171,6 +174,7 @@ class Assignment(Statement):
 
 class Loop(Statement):
     def __init__(self, loop_name, output_name, input_var, startpos, structsize, count, maxunroll, vtype=None, conditions=None):
+        super(Loop, self).__init__()
         self._loop_name = loop_name
         self.output_name = output_name
         if not isinstance(input_var, Expression):
@@ -210,6 +214,7 @@ class Loop(Statement):
 
 class VLoop(Loop):
     def __init__(self, loop_name, output_name, start, nextname, contcondition, maxunroll, vtype=None, conditions=None):
+        Statement.__init__(self)
         self._loop_name = loop_name
         self.output_name = output_name
         if not isinstance(start, Expression):
@@ -241,6 +246,7 @@ class VLoop(Loop):
 
 class Condition(Statement):
     def __init__(self, expr, isterminal, conditions=None, name=None):
+        super(Condition, self).__init__()
         if isinstance(expr, Expression):
             self.expr = expr
         elif isinstance(expr, bool):
@@ -303,6 +309,7 @@ class Condition(Statement):
 
 class Define(Statement):
     def __init__(self, name, value):
+        super(Define, self).__init__()
         if not isinstance(value, Expression):
             t = type(value)
             log.error(f"value expected to be of type Expression. {t} found instead")
@@ -315,6 +322,7 @@ class Define(Statement):
 
 class Optimization(Statement):
     def __init__(self, strategy, expression):
+        super(Optimization, self).__init__()
         if not isinstance(strategy, Optimizations):
             t = type(strategy)
             log.error(f"strategy expected to be one of the supported Optimizations. {t} found instead")

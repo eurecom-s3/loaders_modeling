@@ -62,72 +62,11 @@ class Parser:
         'input : input NEWLINE'
         p[0] = p[1]
 
-    def p_input_ass(self, p):
-        'input : assignment_stmt'
-        log.debug("Assignment: " + str(p[1]))
-        if len(self._block_stack) == 0:
-            self.statements.append(p[1])
-        else:
-            block = self._block_stack.pop()
-            block.add_statement(p[1])
-            self._block_stack.append(block)
-
-    def p_input_cond(self, p):
-        'input : condition_stmt'
-        log.debug("Condition " + str(p[1]))
-        name, condition = p[1]
-        self.conditions[name.upper()] = condition
-        condition.name = name.upper()
-        if len(self._block_stack) == 0:
-            self.statements.append(condition)
-        else:
-            block = self._block_stack.pop()
-            block.add_statement(condition)
-            self._block_stack.append(block)
-
-    def p_input_input(self, p):
-        'input : input_stmt'
-        log.debug("Input " + str(p[1]))
-        stmt = Input(p[1][0], p[1][1])
-        self.statements.append(stmt)
-        self.variables[p[1][0].name] = p[1][0]
-
-    def p_input_loopstart(self, p):
-        'input : loopstart_stmt'
-        log.debug("Loop start " + str(p[1]))
-        loop = p[1][1]
-        self._block_stack.append(loop)
-        var = self.variables[loop.output_name]
-        var.type = loop.vtype
-
-    def p_input_loopend(self, p):
-        'input : loopend_stmt'
-        loop = self._block_stack.pop()
-        if loop._loop_name != p[1][0]:
-            log.critical("Loop end does not match current loop name")
-            raise ValueError
-        log.debug("Loop end " + str(p[1][0]))
-        if len(self._block_stack) == 0:
-            self.statements.append(loop)
-        else:
-            block = self._block_stack.pop()
-            block.add_statement(loop)
-            self._block_stack.append(block)
-
-    def p_input_define(self, p):
-        'input : define_stmt'
-        stmt = p[1]
-        if stmt.name in self.variables:
-            log.warning(f"Defining constant {stmt.name}, but a variable with the same name already declared. Skipping")
-        else:
-            self.defines[stmt.name] = stmt.value
-
-    def p_input_optimize(self, p):
-        'input : OPTIMIZE expression'
-        strategy = p[1]
-        expression = p[2]
-        opt = Optimization(strategy, expression)
-        self.statements.append(opt)
+    def p_input_1(self, p):
+        'input : statement'
+        if not p[1].lineno:
+            lineno = p.lexer.lineno
+            p[1].lineno = lineno
 
     def p_input_fromfile(self, p):
         'input : FROMFILE VARIABLE expression expression NUMBER NUMBER'
@@ -138,16 +77,14 @@ class Parser:
         nbytes = p[6]
         buf = read_file(filename)
         for n, b in enumerate(buf[foffset:foffset+nbytes]):
-            curroffset = Expression("ADD", start, Expression("IMM", Immediate(n)))
+            curroffset = Expression("ADD", start,
+                                    Expression("IMM", Immediate(n)))
             nb = Expression("Index", symbol, curroffset)
             expr = Expression("EQ", nb, Expression("IMM", Immediate(b)))
-            cond = Condition(expr, isterminal=True, name=f"FROM_{filename}_{n}")
+            cond = Condition(expr, isterminal=True,
+                             name=f"FROM_{filename}_{n}")
             self.statements.append(cond)
             self.conditions[cond.name] = cond
-
-    def p_define_stmt(self, p):
-        'define_stmt : DEFINE VARIABLE expression'
-        p[0] = Define(p[2], p[3])
 
     def p_input_load(self, p):
         'input : load_stmt'
@@ -167,6 +104,85 @@ class Parser:
         new_defs = {x: Expression("IMM", Immediate(y))
                     for x, y in new_defs.items()}
         self.defines.update(new_defs)
+
+    def p_statement_ass(self, p):
+        'statement : assignment_stmt'
+        lineno = p.lineno(0)
+        log.debug("Assignment: " + str(p[1]))
+        if len(self._block_stack) == 0:
+            self.statements.append(p[1])
+        else:
+            block = self._block_stack.pop()
+            block.add_statement(p[1])
+            self._block_stack.append(block)
+        p[0] = p[1]
+
+    def p_statement_cond(self, p):
+        'statement : condition_stmt'
+        log.debug("Condition " + str(p[1]))
+        name, condition = p[1]
+        self.conditions[name.upper()] = condition
+        condition.name = name.upper()
+        if len(self._block_stack) == 0:
+            self.statements.append(condition)
+        else:
+            block = self._block_stack.pop()
+            block.add_statement(condition)
+            self._block_stack.append(block)
+        p[0] = condition
+
+    def p_statement_input(self, p):
+        'statement : input_stmt'
+        log.debug("Input " + str(p[1]))
+        stmt = Input(p[1][0], p[1][1])
+        self.statements.append(stmt)
+        self.variables[p[1][0].name] = p[1][0]
+        p[0] = stmt
+
+    def p_statement_loopstart(self, p):
+        'statement : loopstart_stmt'
+        log.debug("Loop start " + str(p[1]))
+        loop = p[1][1]
+        self._block_stack.append(loop)
+        var = self.variables[loop.output_name]
+        var.type = loop.vtype
+        p[0] = loop
+
+    def p_statement_loopend(self, p):
+        'statement : loopend_stmt'
+        loop = self._block_stack.pop()
+        if loop._loop_name != p[1][0]:
+            log.critical("Loop end does not match current loop name")
+            raise ValueError
+        log.debug("Loop end " + str(p[1][0]))
+        if len(self._block_stack) == 0:
+            self.statements.append(loop)
+        else:
+            block = self._block_stack.pop()
+            block.add_statement(loop)
+            self._block_stack.append(block)
+        p[0] = loop
+
+    def p_statement_define(self, p):
+        'statement : define_stmt'
+        stmt = p[1]
+        if stmt.name in self.variables:
+            log.warning(f"Defining constant {stmt.name}, but a variable with the same name already declared. Skipping")
+        else:
+            self.defines[stmt.name] = stmt.value
+        p[0] = stmt
+
+    def p_statement_optimize(self, p):
+        'statement : OPTIMIZE expression'
+        strategy = p[1]
+        expression = p[2]
+        opt = Optimization(strategy, expression)
+        self.statements.append(opt)
+        p[0] = opt
+
+    def p_define_stmt(self, p):
+        'define_stmt : DEFINE VARIABLE expression'
+        p[0] = Define(p[2], p[3])
 
     def p_load_stmt(self, p):
         'load_stmt : LOADTYPES VARIABLE VARIABLE'
