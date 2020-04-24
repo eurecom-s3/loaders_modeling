@@ -287,14 +287,22 @@ class Parser:
         p[0] = (loopindex, loop)
 
     def p_vloopstart_stmt_variable(self, p):
-        'vloopstart : LOOPSTART COLON VARIABLE ARROW VLOOP LPAREN expression COMMA VARIABLE COMMA CONDITIONNAME COMMA NUMBER RPAREN'
-        loopindex = p[1]
-        newvar = p[3]
-        start = p[7]
-        nextname = Variable(p[9])
-        condition = p[11]
-        maxunroll = p[13]
-        loop = VLoop(loopindex, newvar, start, nextname, condition, maxunroll)
+        '''vloopstart : LOOPSTART COLON VARIABLE ARROW VLOOP LPAREN expression COMMA VARIABLE COMMA CONDITIONNAME COMMA NUMBER RPAREN
+                      | LOOPSTART conditionlist COLON VARIABLE ARROW VLOOP LPAREN expression COMMA VARIABLE COMMA CONDITIONNAME COMMA NUMBER RPAREN
+'''
+        t = [p[x] for x in range(len(p))]
+        loopindex = t[1]
+        if len(p) == 16: # if it's conditional
+            conditionlist = [self.conditions[c] for c in t[2].names]
+            del t[2]
+        else:
+            conditionlist = None
+        newvar = t[3]
+        start = t[7]
+        nextname = Variable(t[9])
+        condition = t[11]
+        maxunroll = t[13]
+        loop = VLoop(loopindex, newvar, start, nextname, condition, maxunroll, conditions=conditionlist)
         p[0] = (loopindex, loop)
 
     def p_loopend_stmt(self, p):
