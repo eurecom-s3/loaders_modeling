@@ -161,7 +161,7 @@ class Z3Backend(DefaultBackend):
 
     z3_funcs_sized = {'ADD', 'SUB', 'MUL', 'UDIV', 'MOD', 'EQ', 'NEQ', 'GE', 'LE', 'GT', 'LT', 'ULE', 'UGE', 'UGT', 'ULT', 'BITOR', 'BITAND', 'ALIGNUP', 'ALIGNDOWN'}
     z3_funcs_bool  = {'OR', 'AND', 'NOT'}
-    z3_funcs_unsigned = {'BITOR', 'BITAND', 'ULE', 'ULT', 'UGT', 'UGE', 'EQ', 'NEQ'}
+    z3_funcs_unsigned = {'ADD', 'SUB', 'BITOR', 'BITAND', 'ULE', 'ULT', 'UGT', 'UGE', 'EQ', 'NEQ'}
 
     def dispatch_z3_1(self, func, arg):
         return self.z3_funcs[func](arg)
