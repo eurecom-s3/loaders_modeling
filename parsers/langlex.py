@@ -18,8 +18,8 @@ class Lexer:
         'OPERATOR2',
 
         'ASSIGNSTART',
-        'CONDITIONSTART',
         'CONDITIONNAME',
+        'GENCONDITIONNAME',
         'LOOPSTART',
         'LOOPEND',
         'LOOP',
@@ -142,6 +142,11 @@ class Lexer:
 
     def t_CONDITIONNAME(self, t):
         r'(V|v)\d+'
+        log.debug("Condition name token")
+        return t
+
+    def t_GENCONDITIONNAME(self, t):
+        r'(G|g)\d+'
         log.debug("Condition name token")
         return t
 

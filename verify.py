@@ -18,7 +18,7 @@ if __name__ == "__main__":
 
     modelfile = sys.argv[1]
     executable = sys.argv[2]
-    parser = Parser()
+    parser = Parser(ptype=Parser.ParserType.VALIDATOR)
     parser.parse_file(modelfile)
     backend = PythonBackend()
     backend.load_statements(parser.statements)

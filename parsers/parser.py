@@ -4,6 +4,7 @@ import logging
 import pickle
 from collections import deque, defaultdict
 from utils import customdefdict
+from enum import Enum, auto
 
 import coloredlogs
 
@@ -23,6 +24,10 @@ def read_file(filename):
         return buf
 
 class Parser:
+    class ParserType(Enum):
+        GENERATOR = auto()
+        VALIDATOR = auto()
+
     tokens = Lexer.tokens
     def parse_file(self, fname):
         self._fname = fname
@@ -64,7 +69,7 @@ class Parser:
 
     def p_input_1(self, p):
         'input : statement'
-        if not p[1].lineno:
+        if p[1] and not p[1].lineno:
             lineno = p.lexer.lineno
             p[1].lineno = lineno
 
@@ -130,6 +135,13 @@ class Parser:
             block.add_statement(condition)
             self._block_stack.append(block)
         p[0] = condition
+
+    def p_statement_gencond(self, p):
+        'statement : gencondition_stmt'
+        if self._type == self.ParserType.GENERATOR:
+            self.p_statement_cond(p)
+        else:
+            p[0] = None
 
     def p_statement_input(self, p):
         'statement : input_stmt'
@@ -259,6 +271,29 @@ class Parser:
 
     def p_condition_stmt_noexpr(self, p):
         'condition_stmt : CONDITIONNAME conditionlist SEMICOLON'
+        conditionslist = p[2]
+        conds = [self.conditions[c] for c in conditionslist.names]
+        cond = Condition(True, False, conds)
+        p[0] = (p[1], cond)
+
+    def p_gcondition_stmt_uncond(self, p):
+        'gencondition_stmt : GENCONDITIONNAME COLON conditionexpr'
+        p[3].name = p[1]
+        p[0] = (p[1], p[3])
+
+    def p_gcondition_stmt_cond(self, p):
+        'gencondition_stmt : GENCONDITIONNAME conditionlist COLON conditionexpr'
+        cond = p[4]
+        cond.name = p[1]
+        conditionslist = p[2]
+        conds = [~self.conditions[c.name] if c.negated else
+                 self.conditions[c.name]
+                 for c in conditionslist]
+        cond.conditions = conds
+        p[0] = (p[1], cond)
+
+    def p_gcondition_stmt_noexpr(self, p):
+        'gencondition_stmt : GENCONDITIONNAME conditionlist SEMICOLON'
         conditionslist = p[2]
         conds = [self.conditions[c] for c in conditionslist.names]
         cond = Condition(True, False, conds)
@@ -473,7 +508,7 @@ class Parser:
         log.critical("Syntax error in input! %s" % p)
         raise Exception(p)
 
-    def __init__(self, pwd=""):
+    def __init__(self, pwd="", ptype=ParserType.VALIDATOR):
         self.lexer = Lexer()
         self.loaded_types = {}
         self._variables = customdefdict(lambda x: Variable(x))
@@ -482,6 +517,7 @@ class Parser:
         self._block_stack = deque()
         self._statements = []
         self.pwd = pwd
+        self._type = ptype
         try:
             self.parser = yacc.yacc(module=self)
         except yacc.YaccError as e:

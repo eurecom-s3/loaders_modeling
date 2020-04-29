@@ -47,7 +47,7 @@ if __name__ == "__main__":
     z3_models_negate = []
     for model in [*asserts, *negates]:
         modelname = path.basename(model)
-        parser = Parser()
+        parser = Parser(ptype=Parser.ParserType.GENERATOR)
         parser.parse_file(model)
         backend = Z3Backend(name=modelname, voi=voi)
         backend.exec_statements(parser.statements)
