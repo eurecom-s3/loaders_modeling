@@ -70,7 +70,7 @@ class Parser:
 
     def p_input_fromfile(self, p):
         'input : FROMFILE VARIABLE expression expression NUMBER NUMBER'
-        filename = os.path.join(self.pwd, p[2])
+        filename = os.path.join(self._cwd, p[2])
         symbol = p[3]
         start = p[4]
         foffset = p[5]
