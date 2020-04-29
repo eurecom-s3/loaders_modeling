@@ -26,7 +26,12 @@ class DefaultBackend(object):
 
     def exec_statements(self, statements):
         for stmt in statements:
-            self._exec_statement(stmt)
+            try:
+                self._exec_statement(stmt)
+            except Exception:
+                self.log.error("Error occurred while processing statement " +
+                               f"at line {stmt.lineno}")
+                raise
 
     def load_statements(self, statements):
         self._statements = statements
