@@ -417,7 +417,7 @@ class Z3Backend(DefaultBackend):
         string_hex = ''.join([string_hex_rev[i:i+2]
                               for i in range(len(string_hex_rev)-2, -2, -2)])
         test = bytes.fromhex(string_hex)
-        test += b'\x00' * (header.size() - len(test))
+        test += b'\x00' * (int(header.size()/8) - len(test))
         return test
 
     def verify(self, test, variable="HEADER"):
