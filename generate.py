@@ -33,21 +33,25 @@ if __name__ == "__main__":
                            default="testcase",
                            help="Output file for testcase")
     argparser.add_argument('--var', '-V', action="store",
-                           metavar="varaible", type=str, nargs=1,
+                           metavar="variable", type=str, nargs=1,
                            default="HEADER",
                            help="Variable in the model to use for the testcase")
+    argparser.add_argument('--size', '-B', action="store", metavar="bytes",
+                          type=int, default=None,
+                          help="Size in bytes of the testcase to generate")
 
     args = argparser.parse_args()
     asserts = reduce(lambda x,y: x | {*y}, args.asserts, set())
     negates = reduce(lambda x,y: x | {*y}, args.negates, set())
     outfile = args.out
     voi = args.var
+    size = args.size
 
     z3_models_assert = []
     z3_models_negate = []
     for model in [*asserts, *negates]:
         modelname = path.basename(model)
-        parser = Parser(ptype=Parser.ParserType.GENERATOR)
+        parser = Parser(ptype=Parser.ParserType.GENERATOR, input_size=size)
         parser.parse_file(model)
         backend = Z3Backend(name=modelname, voi=voi)
         backend.exec_statements(parser.statements)

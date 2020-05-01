@@ -146,7 +146,8 @@ class Parser:
     def p_statement_input(self, p):
         'statement : input_stmt'
         log.debug("Input " + str(p[1]))
-        stmt = Input(p[1][0], p[1][1])
+        size = self._input_size if self._input_size else p[1][1]
+        stmt = Input(p[1][0], size)
         self.statements.append(stmt)
         self.variables[p[1][0].name] = p[1][0]
         p[0] = stmt
@@ -508,7 +509,7 @@ class Parser:
         log.critical("Syntax error in input! %s" % p)
         raise Exception(p)
 
-    def __init__(self, pwd="", ptype=ParserType.VALIDATOR):
+    def __init__(self, pwd="", ptype=ParserType.VALIDATOR, input_size=None):
         self.lexer = Lexer()
         self.loaded_types = {}
         self._variables = customdefdict(lambda x: Variable(x))
@@ -518,6 +519,7 @@ class Parser:
         self._statements = []
         self.pwd = pwd
         self._type = ptype
+        self._input_size = input_size
         try:
             self.parser = yacc.yacc(module=self)
         except yacc.YaccError as e:
