@@ -195,7 +195,11 @@ class Parser:
 
     def p_define_stmt(self, p):
         'define_stmt : DEFINE VARIABLE expression'
-        p[0] = Define(p[2], p[3])
+        value = p[3]
+        if p[2] in self._custom_defs:
+            value = self._custom_defs[p[2]]
+
+        p[0] = Define(p[2], value)
 
     def p_load_stmt(self, p):
         'load_stmt : LOADTYPES VARIABLE VARIABLE'
@@ -509,7 +513,8 @@ class Parser:
         log.critical("Syntax error in input! %s" % p)
         raise Exception(p)
 
-    def __init__(self, pwd="", ptype=ParserType.VALIDATOR, input_size=None):
+    def __init__(self, pwd="", ptype=ParserType.VALIDATOR, input_size=None,
+                 custom_defs=None):
         self.lexer = Lexer()
         self.loaded_types = {}
         self._variables = customdefdict(lambda x: Variable(x))
@@ -520,6 +525,13 @@ class Parser:
         self.pwd = pwd
         self._type = ptype
         self._input_size = input_size
+
+        if not custom_defs:
+            custom_defs = {}
+        self._custom_defs = {}
+        for var, val in custom_defs.items():
+            self._custom_defs[var] = Expression("IMM", Immediate(val))
+
         try:
             self.parser = yacc.yacc(module=self)
         except yacc.YaccError as e:

@@ -39,6 +39,11 @@ if __name__ == "__main__":
     argparser.add_argument('--size', '-B', action="store", metavar="bytes",
                           type=int, default=None,
                           help="Size in bytes of the testcase to generate")
+    argparser.add_argument('--define', '-D', action="store", metavar="define",
+                           type=lambda x: (x.split(":")[0],
+                                           int(x.split(":")[1])),
+                           nargs="*",
+                           help="Overwrite constant definition")
 
     args = argparser.parse_args()
     asserts = reduce(lambda x,y: x | {*y}, args.asserts, set())
@@ -46,12 +51,14 @@ if __name__ == "__main__":
     outfile = args.out
     voi = args.var
     size = args.size
+    defs = dict(args.define)
 
     z3_models_assert = []
     z3_models_negate = []
     for model in [*asserts, *negates]:
         modelname = path.basename(model)
-        parser = Parser(ptype=Parser.ParserType.GENERATOR, input_size=size)
+        parser = Parser(ptype=Parser.ParserType.GENERATOR, input_size=size,
+                        custom_defs=defs)
         parser.parse_file(model)
         backend = Z3Backend(name=modelname, voi=voi)
         backend.exec_statements(parser.statements)
