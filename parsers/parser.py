@@ -480,6 +480,30 @@ class Parser:
         size = self.loaded_types[typename].size // 8
         p[0] = Expression("IMM", Immediate(size))
 
+    def p_expression_strcmp(self, p):
+        'expression : STRCMP expression expression STR'
+        s = p[4]
+        if len(s) < 2:
+            log.error(f"Use STRCMP only for strings longer than 1 character")
+            raise ValueError
+        inp = p[2]
+        start = p[3]
+        current = start
+        exprs = [Expression("EQ",
+                            Expression("Index",
+                                       inp,
+                                       Expression("ADD",
+                                                  start,
+                                                  Expression("IMM",
+                                                             Immediate(
+                                                                 index)))),
+                            Expression("IMM", Immediate(ord(char))))
+                 for index, char in enumerate(s)]
+        ret = Expression("AND", exprs[0], exprs[1])
+        for expr in exprs[2:]:
+            ret = Expression("AND", ret, expr)
+        p[0] = ret
+
     def p_expression_variable(self, p):
         'expression : VARIABLE'
         log.debug("Found variable " + p[1])

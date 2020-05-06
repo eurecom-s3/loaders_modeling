@@ -25,13 +25,16 @@ if __name__ == "__main__":
     log = logging.getLogger(__name__)
     coloredlogs.install(level="INFO", logger=log)
     from loops import VLoopTest, ConditionalLoopTest
-    from operators import BitwiseTest, AlgebraTest, AlignmentTest
+    from operators import (BitwiseTest, AlgebraTest, AlignmentTest,
+                           StringCompareTest)
     from statements import (FromFileTest, OptimizationTest,
                             ConditionalAssignmentTest)
     from functional import PositiveCombinationTest, NegativeCombinationTest
 
     test(BitwiseTest)
     test(AlgebraTest)
+    test(AlignmentTest)
+    test(StringCompareTest)
     test(VLoopTest)
     test(ConditionalLoopTest)
     test(FromFileTest)

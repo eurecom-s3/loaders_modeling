@@ -17,6 +17,9 @@ class Lexer:
         'OPERATOR1',
         'OPERATOR2',
 
+        # string comparison - a syntactic sugar
+        'STRCMP',
+
         'ASSIGNSTART',
         'CONDITIONNAME',
         'GENCONDITIONNAME',
@@ -47,6 +50,7 @@ class Lexer:
 
         'NUMBER',
         'CHAR',
+        'STR',
         'BOOL',
         'VARIABLE',
         'INPUT',
@@ -72,10 +76,20 @@ class Lexer:
         t.value = t.value[:-1].upper()
         return t
 
+    def t_STRCMP(self, t):
+        r"(STRCMP|STRCmp|StrCmp)"
+        t.value = t.value[:-1].upper()
+        return t
+
     def t_CHAR(self, t):
         r'"[^"]"'
         t.value = ord(t.value[1])
         log.debug("A single char value token")
+        return t
+
+    def t_STR(self, t):
+        r"'[^']+'"
+        t.value = t.value[1:-1]
         return t
 
     def t_BOOL(self, t):
