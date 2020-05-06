@@ -1,5 +1,5 @@
 INPUT inp 10
 
 P: start <- INT 2 4
-P: out <- inp[2, 6]
-V1: STRCMP inp start 'FOOBAR' term
+P: out <- inp[2, 7]
+V1: STRCMP inp start '\x00FOOBAR' term

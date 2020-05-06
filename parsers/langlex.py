@@ -89,7 +89,7 @@ class Lexer:
 
     def t_STR(self, t):
         r"'[^']+'"
-        t.value = t.value[1:-1]
+        t.value = eval('"' + t.value[1:-1] + '"')
         return t
 
     def t_BOOL(self, t):
