@@ -51,7 +51,7 @@ if __name__ == "__main__":
     outfile = args.out
     voi = args.var
     size = args.size
-    defs = dict(args.define)
+    defs = dict(args.define) if args.define else {}
 
     z3_models_assert = []
     z3_models_negate = []
