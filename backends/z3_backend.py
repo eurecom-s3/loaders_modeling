@@ -11,6 +11,7 @@ from classes import (Base, Immediate, Variable, Expression, Input,
                      Optimizations)
 
 class Z3Backend(DefaultBackend):
+    print_unsat = True
     def __init__(self, name="", voi=None, enable_optimizations=False):
         super().__init__()
         self.name = name
@@ -389,10 +390,11 @@ class Z3Backend(DefaultBackend):
         self.log.info("Checking satisfiability")
         if solver.check().r != 1:
             self.log.critical("Model unsatisfiable")
-            unsat_core = solver.unsat_core()
-            self.log.critical(f"Unsat core: {unsat_core}")
-            for cname in unsat_core:
-                self.log.critical(self.conditions[str(cname)])
+            if self.print_unsat:
+                unsat_core = solver.unsat_core()
+                self.log.critical(f"Unsat core: {unsat_core}")
+                for cname in unsat_core:
+                    self.log.critical(self.conditions[str(cname)])
             return None
         else:
             self.log.info("Model satisfiable")
@@ -441,8 +443,6 @@ class Z3Backend(DefaultBackend):
         return self.check_sat()
 
     def __and__(self, other):
-        if other.voi != self.voi:
-            log.error("Variable of interest (voi) differs in the two models")
         ret = Z3Backend(name=f"{self.name}&{other.name}", voi=self.voi)
 
         for condname, cond in self.terminal_conditions.items():
@@ -451,8 +451,15 @@ class Z3Backend(DefaultBackend):
             ret.terminal_conditions[f"{other.name}_{condname}"] = cond
 
         ret.variables[f'{self.name}_{ret.voi}'] = self.variables[ret.voi]
-        ret.variables[f'{other.name}_{ret.voi}'] = other.variables[ret.voi]
         ret.variables[f'{ret.voi}'] = self.variables[ret.voi]
+
+        ### HACK alert! This avoid to add useless constraints
+        ### from z3_model_support in differential.py
+        if other.voi != self.voi:
+            self.log.warning(f"Variable of interest (voi) differs in the two models. Only adding the constraints of the second model, without enforcinf VOI equality. This can cause troubles.")
+            return ret
+
+        ret.variables[f'{other.name}_{ret.voi}'] = other.variables[ret.voi]
         voicond = Condition(
             Expression("EQ",
                        Expression("VAR", Variable(f'{self.name}_{ret.voi}')),
