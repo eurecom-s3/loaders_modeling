@@ -92,6 +92,7 @@ class PythonBackend(DefaultBackend):
                        'SHL'         : self.SHL,
                        'ALIGNUP'     : self.ALIGNUP,
                        'ALIGNDOWN'   : self.ALIGNDOWN,
+                       'OVFLADD'     : self.OVFLADD
         }
         self.log = logging.getLogger(__name__)
         self.log.setLevel(logging.DEBUG)
@@ -274,6 +275,16 @@ class PythonBackend(DefaultBackend):
     @unsigned()
     def ALIGNDOWN(a, b):
         return a & -b
+
+    @staticmethod
+    @sized(skipret=True)
+    def OVFLADD(a, b):
+        size = len(a)
+        assert size == len(b)
+        maxint = 2**(size*8) - 1
+        a = unpack(a, 'all', endianness='little', sign=False)
+        b = unpack(b, 'all', endianness='little', sign=False)
+        return (maxint - a) < b
 
     def VAR(self, var):
         return self.variables[var.name]
