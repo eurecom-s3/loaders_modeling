@@ -27,6 +27,8 @@ class Parser:
     class ParserType(Enum):
         GENERATOR = auto()
         VALIDATOR = auto()
+        DIFFERENTIAL_ASSERT = auto()
+        DIFFERENTIAL_NEGATE = auto()
 
     tokens = Lexer.tokens
     def parse_file(self, fname):
@@ -138,7 +140,8 @@ class Parser:
 
     def p_statement_gencond(self, p):
         'statement : gencondition_stmt'
-        if self._type == self.ParserType.GENERATOR:
+        if self._type in (self.ParserType.GENERATOR,
+                          self.ParserType.DIFFERENTIAL_ASSERT):
             self.p_statement_cond(p)
         else:
             p[0] = None
@@ -325,11 +328,18 @@ class Parser:
 '''
         loopindex = p[1]
         isconditional = len(p) == 18
+        unroll_count = None
+        if self._type in (self.ParserType.DIFFERENTIAL_ASSERT,
+                          self.ParserType.DIFFERENTIAL_NEGATE):
+            unroll_count = 1
         if not isconditional:
-            loop = Loop(p[1], p[3], p[7], p[9], p[11], p[13], p[15])
+            unroll_count = unroll_count if unroll_count else p[15]
+            loop = Loop(p[1], p[3], p[7], p[9], p[11], p[13], unroll_count)
         else:
+            unroll_count = unroll_count if unroll_count else p[16]
             conds = [self.conditions[c] for c in p[2].names]
-            loop = Loop(p[1], p[4], p[8], p[10], p[12], p[14], p[16], conditions=conds)
+            loop = Loop(p[1], p[4], p[8], p[10], p[12], p[14], unroll_count,
+                        conditions=conds)
         p[0] = (loopindex, loop)
 
     def p_loopstart_stmt_2(self, p):
@@ -339,7 +349,12 @@ class Parser:
         if structsize.opcode != "IMM":
             raise ValueError("Struct size must be a number")
         structsize = structsize.operands[0].value
-        loop = Loop(p[1], p[3], p[7], p[9], structsize, p[13], p[15])
+        if self._type in (self.ParserType.DIFFERENTIAL_ASSERT,
+                          self.ParserType.DIFFERENTIAL_NEGATE):
+            unroll_count = 1
+        else:
+            unroll_count = p[15]
+        loop = Loop(p[1], p[3], p[7], p[9], structsize, p[13], unroll_count)
         p[0] = (loopindex, loop)
 
     def p_vloopstart_stmt_variable(self, p):

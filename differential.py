@@ -128,7 +128,8 @@ if __name__ == "__main__":
     z3_models_negate = []
     for model in asserts:
         modelname = path.basename(model)
-        parser = Parser(ptype=Parser.ParserType.GENERATOR, input_size=size,
+        parser = Parser(ptype=Parser.ParserType.DIFFERENTIAL_ASSERT,
+                        input_size=size,
                         custom_defs=defs)
         parser.parse_file(model)
         backend = Z3Backend(name=modelname, voi=voi)
@@ -136,13 +137,13 @@ if __name__ == "__main__":
         z3_models_assert.append(backend)
     for model in negates:
         modelname = path.basename(model)
-        parser = Parser(ptype=Parser.ParserType.VALIDATOR, input_size=size,
+        parser = Parser(ptype=Parser.ParserType.DIFFERENTIAL_NEGATE,
+                        input_size=size,
                         custom_defs=defs)
         parser.parse_file(model)
         backend = Z3Backend(name=modelname, voi=voi)
         backend.exec_statements(parser.statements)
         z3_models_negate.append(backend)
-
 
     constraints_db = create_constraints_db((*z3_models_assert,
                                             *z3_models_negate))

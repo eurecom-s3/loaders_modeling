@@ -263,6 +263,17 @@ class Z3Backend(DefaultBackend):
         if stmt.isterminal:
             self.terminal_conditions[stmt.name] = self.conditions[stmt.name]
 
+    @staticmethod
+    def _build_loop_unrool_condition(loop):
+        count = loop.count
+        maxunroll = loop.maxunroll
+        expr = Expression("ULE",
+                          count,
+                          Expression("IMM", Immediate(maxunroll)))
+        condition = Condition(expr, True, conditions=loop._conditions,
+                              name=f"L{loop._loop_name}_unroll")
+        return condition
+
     def _exec_loop(self, stmt):
         cond_prefix = f"L{stmt._loop_name}_"
         statements = stmt._statements
@@ -272,6 +283,7 @@ class Z3Backend(DefaultBackend):
         startpos = stmt.startpos
         count = stmt.count
         conditions = stmt._conditions
+        self._exec_statement(self._build_loop_unrool_condition(stmt))
         for index in range(stmt.maxunroll):
             pref = cond_prefix + f"{index}_"
             self.log.debug(f"Unrolling loop {stmt}. Index {index}")
