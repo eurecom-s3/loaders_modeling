@@ -54,6 +54,7 @@ class Expression(Base):
                'ISPOW2'     : 1,
                'ALIGNUP'    : 2,
                'ALIGNDOWN'  : 2,
+               'OVFLADD'    : 2,
                'INT'        : 2,
     }
 

@@ -47,6 +47,7 @@ class Z3Backend(DefaultBackend):
                           'ISPOW2'    : self.ISPOW2,
                           'ALIGNUP'   : self.ALIGNUP,
                           'ALIGNDOWN' : self.ALIGNDOWN,
+                          'OVFLADD'  : self.OVFLWADD,
                           'INT'       : self.INT,
                           'VAR'       : self.VAR,
                           'IMM'       : self.IMM
@@ -134,6 +135,12 @@ class Z3Backend(DefaultBackend):
         return a & -b
 
     @staticmethod
+    def OVFLWADD(a, b):
+        maxint = z3.BitVecVal(-1, a.size())
+        ### True is there is an overflow
+        return z3.ULT(maxint - a, b)
+
+    @staticmethod
     def INT(a, b):
         a = a if isinstance(a, int) else a.as_long()
         b = b if isinstance(b, int) else b.as_long()
@@ -160,9 +167,9 @@ class Z3Backend(DefaultBackend):
     def VAR(self, var):
         return self.variables[var.name]
 
-    z3_funcs_sized = {'ADD', 'SUB', 'MUL', 'UDIV', 'MOD', 'EQ', 'NEQ', 'GE', 'LE', 'GT', 'LT', 'ULE', 'UGE', 'UGT', 'ULT', 'BITOR', 'BITAND', 'ALIGNUP', 'ALIGNDOWN'}
+    z3_funcs_sized = {'ADD', 'SUB', 'MUL', 'UDIV', 'MOD', 'EQ', 'NEQ', 'GE', 'LE', 'GT', 'LT', 'ULE', 'UGE', 'UGT', 'ULT', 'BITOR', 'BITAND', 'ALIGNUP', 'ALIGNDOWN', 'OVFLWADD'}
     z3_funcs_bool  = {'OR', 'AND', 'NOT'}
-    z3_funcs_unsigned = {'ADD', 'SUB', 'BITOR', 'BITAND', 'ULE', 'ULT', 'UGT', 'UGE', 'EQ', 'NEQ'}
+    z3_funcs_unsigned = {'ADD', 'SUB', 'BITOR', 'BITAND', 'ULE', 'ULT', 'UGT', 'UGE', 'EQ', 'NEQ', 'OVFLWADD'}
 
     def dispatch_z3_1(self, func, arg):
         return self.z3_funcs[func](arg)
