@@ -3,10 +3,11 @@
 import logging
 import os.path
 
+from modelLang import parsers, backends
 from tests import Test
-from parsers import Parser
-from backends import Z3Backend
 
+from modelLang.parsers import Parser
+from modelLang.backends import Z3Backend
 class FromFileTest(Test):
     testfile = "tests/statements/fromfile.lmod"
 

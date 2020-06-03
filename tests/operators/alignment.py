@@ -2,10 +2,11 @@
 import z3
 import logging
 
+from modelLang import parsers, backends
 from tests import Test
-from parsers import Parser
-from backends import *
 
+from modelLang.parsers import Parser
+from modelLang.backends import Z3Backend
 
 class AlignmentTest(Test):
     testfile = "tests/operators/alignment.lmod"
