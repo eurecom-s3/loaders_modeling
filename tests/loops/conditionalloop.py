@@ -3,12 +3,11 @@ import logging
 import z3
 
 from modelLang import parsers, backends
-from tests import Test
 
 from modelLang.parsers import Parser
 from modelLang.backends import Z3Backend
 
-class ConditionalLoopTest(Test):
+class ConditionalLoopTest():
     testfile = "tests/loops/conditionalloop.lmod"
 
     @staticmethod

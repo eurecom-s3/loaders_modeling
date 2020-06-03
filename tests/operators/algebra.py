@@ -4,12 +4,11 @@ import logging
 import z3
 
 from modelLang import parsers, backends
-from tests import Test
 
 from modelLang.parsers import Parser
 from modelLang.backends import Z3Backend
 
-class AlgebraTest(Test):
+class AlgebraTest():
     testfile = "tests/operators/algebra.mod"
 
     @staticmethod

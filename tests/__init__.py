@@ -1,15 +1,6 @@
 #!/usr/bin/env python3
-
 import logging
 import coloredlogs
-
-class Test():
-    testfile = ""
-
-    @staticmethod
-    def run():
-        raise NotImplementedError
-
 
 if __name__ == "__main__":
     def test(c):

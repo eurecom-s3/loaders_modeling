@@ -3,12 +3,11 @@ import logging
 import z3
 
 from modelLang import parsers, backends
-from tests import Test
 
 from modelLang.parsers import Parser
 from modelLang.backends import Z3Backend
 
-class VLoopTest(Test):
+class VLoopTest():
     testfile = "tests/loops/vloop.lmod"
 
     @staticmethod

@@ -3,14 +3,13 @@ import logging
 import z3
 
 from modelLang import parsers, backends
-from tests import Test
 
 from modelLang.parsers import Parser
 from modelLang.backends import Z3Backend
 
 from pwnlib.util.packing import unpack
 
-class PositiveCombinationTest(Test):
+class PositiveCombinationTest():
     testfile1 = "tests/functional/mod1.lmod"
     testfile2 = "tests/functional/mod2.lmod"
 

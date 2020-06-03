@@ -4,14 +4,13 @@ import logging
 import os.path
 
 from modelLang import parsers, backends
-from tests import Test
 
 from modelLang.parsers import Parser
 from modelLang.backends import Z3Backend
 
 from pwnlib.util.packing import pack, unpack
 
-class OptimizationTest(Test):
+class OptimizationTest():
     testfile = "tests/statements/optimization.lmod"
 
     @staticmethod
