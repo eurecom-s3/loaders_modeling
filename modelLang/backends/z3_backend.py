@@ -6,9 +6,9 @@ from collections import deque
 import z3
 
 from .default_backend import DefaultBackend
-from classes import (Base, Immediate, Variable, Expression, Input,
-                     Assignment, Condition, Loop, VLoop, Optimization,
-                     Optimizations)
+from ..classes import (Base, Immediate, Variable, Expression, Input,
+                       Assignment, Condition, Loop, VLoop, Optimization,
+                       Optimizations)
 
 class Z3Backend(DefaultBackend):
     print_unsat = True

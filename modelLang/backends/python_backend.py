@@ -6,7 +6,7 @@ from collections import deque
 from pwnlib.util.packing import pack, unpack
 
 from .default_backend import DefaultBackend, VerificationError
-from classes import (Base, Immediate, Variable, Expression, Input,
+from ..classes import (Base, Immediate, Variable, Expression, Input,
                      Assignment, Condition, Loop)
 
 def extend(value, n, signed):

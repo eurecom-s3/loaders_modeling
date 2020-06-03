@@ -3,10 +3,11 @@ import os.path
 import logging
 import pickle
 from collections import deque, defaultdict
-from utils import customdefdict
 from enum import Enum, auto
 
 import coloredlogs
+
+from ..utils import customdefdict
 
 log = logging.getLogger(__name__)
 log.setLevel(10)
@@ -16,7 +17,7 @@ import ply.yacc as yacc
 
 # Get the token map from the lexer.  This is required.
 from .langlex import Lexer
-from classes import Variable, Assignment, Expression, Condition, Immediate, BoolImmediate, ConditionList, ConditionListEntry, Loop, VLoop, Input, Define, Optimization, Optimizations
+from ..classes import Variable, Assignment, Expression, Condition, Immediate, BoolImmediate, ConditionList, ConditionListEntry, Loop, VLoop, Input, Define, Optimization, Optimizations
 
 def read_file(filename):
     with open(filename, "rb") as fp:

@@ -1,4 +1,4 @@
-from classes import Expression
+from ..classes import Expression
 
 class DefaultBackend(object):
     def __init__(self):

@@ -3,7 +3,7 @@ import ply.lex as lex
 import re
 from enum import Enum, auto, unique
 
-from classes import Base, Optimizations
+from ..classes import Base, Optimizations
 
 log = logging.getLogger(__name__)
 log.setLevel(logging.DEBUG)
