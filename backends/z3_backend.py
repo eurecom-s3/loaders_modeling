@@ -268,7 +268,7 @@ class Z3Backend(DefaultBackend):
     def _exec_condition(self, stmt):
         self.conditions[stmt.name] = self._eval_condition(stmt)
         if stmt.isterminal:
-            self.terminal_conditions[stmt.name] = self.conditions[stmt.name]
+            self.terminal_conditions[f"{self.name}_{stmt.name}"] = self.conditions[stmt.name]
 
     @staticmethod
     def _build_loop_unrool_condition(loop):
@@ -465,9 +465,9 @@ class Z3Backend(DefaultBackend):
         ret = Z3Backend(name=f"{self.name}&{other.name}", voi=self.voi)
 
         for condname, cond in self.terminal_conditions.items():
-            ret.terminal_conditions[f"{self.name}_{condname}"] = cond
+            ret.terminal_conditions[condname] = cond
         for condname, cond in other.terminal_conditions.items():
-            ret.terminal_conditions[f"{other.name}_{condname}"] = cond
+            ret.terminal_conditions[condname] = cond
 
         ret.variables[f'{self.name}_{ret.voi}'] = self.variables[ret.voi]
         ret.variables[f'{ret.voi}'] = self.variables[ret.voi]
