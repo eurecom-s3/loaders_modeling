@@ -12,8 +12,8 @@ import pefile
 log = logging.getLogger(__name__)
 coloredlogs.install(level="INFO", logger=log)
 
-from parsers import Parser
-from backends import Z3Backend
+from modelLang import Parser
+from modelLang import Z3Backend
 
 def write_testcase(testcase, fout):
     with open(fout, "wb") as fp:

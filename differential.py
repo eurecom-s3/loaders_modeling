@@ -13,8 +13,7 @@ import pefile
 log = logging.getLogger(__name__)
 coloredlogs.install(level="INFO", logger=log)
 
-from parsers import Parser
-from backends import Z3Backend
+from modelLang import Parser, Z3Backend
 
 def gen_constraint_name(model, cond):
     return f"{model.name}_{cond}"

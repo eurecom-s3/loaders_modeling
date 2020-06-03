@@ -7,8 +7,6 @@ from enum import Enum, auto
 
 import coloredlogs
 
-from ..utils import customdefdict
-
 log = logging.getLogger(__name__)
 log.setLevel(10)
 coloredlogs.install(level="INFO", logger=log)
@@ -17,6 +15,7 @@ import ply.yacc as yacc
 
 # Get the token map from the lexer.  This is required.
 from .langlex import Lexer
+from ..utils import customdefdict
 from ..classes import Variable, Assignment, Expression, Condition, Immediate, BoolImmediate, ConditionList, ConditionListEntry, Loop, VLoop, Input, Define, Optimization, Optimizations
 
 def read_file(filename):
@@ -99,7 +98,8 @@ class Parser:
         use_cwd = p[1][2]
         os = p[1][1]
         header = p[1][0]
-        module_name = 'structures.' + (os if os != "DEFAULT" else "cparser")
+        module_name = ('modelLang.structures.'
+                       + (os if os != "DEFAULT" else "cparser"))
         module = __import__(module_name, globals(), locals(), ['parse_file'])
         dirpath = self._cwd if use_cwd else "structures/headers"
         header_file = dirpath + f"/{header}.h"

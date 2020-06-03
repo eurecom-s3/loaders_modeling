@@ -8,8 +8,7 @@ import pefile
 log = logging.getLogger(__name__)
 coloredlogs.install(level="INFO", logger=log)
 
-from parsers import Parser
-from backends import Z3Backend, PythonBackend
+from modelLang import Parser, Z3Backend, PythonBackend
 
 if __name__ == "__main__":
     if len(sys.argv) != 3:
