@@ -18,13 +18,16 @@ if __name__ == "__main__":
 
     modelfile = sys.argv[1]
     executable = sys.argv[2]
-    parser = Parser(ptype=Parser.ParserType.VALIDATOR)
-    parser.parse_file(modelfile)
-    backend = PythonBackend()
-    backend.load_statements(parser.statements)
 
     with open(executable, "rb") as fp:
         content = fp.read()
+
+    filesize = len(content)
+    parser = Parser(ptype=Parser.ParserType.VALIDATOR,
+                    custom_defs={"FILESIZE" : filesize})
+    parser.parse_file(modelfile)
+    backend = PythonBackend()
+    backend.load_statements(parser.statements)
 
     if backend.verify(content):
         log.info("PASS")
