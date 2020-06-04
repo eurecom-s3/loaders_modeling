@@ -6,7 +6,7 @@ from enum import Enum, auto, unique
 from ..classes import Base, Optimizations
 
 log = logging.getLogger(__name__)
-log.setLevel(logging.DEBUG)
+log.setLevel(logging.NOTSET)
 
 
 class Lexer:

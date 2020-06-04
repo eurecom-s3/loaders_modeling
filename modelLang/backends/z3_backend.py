@@ -55,8 +55,8 @@ class Z3Backend(DefaultBackend):
         self.enable_optimizations = enable_optimizations
         self.optimizations = []
         self.log = logging.getLogger(__name__)
-        self.log.setLevel(logging.DEBUG)
-        coloredlogs.install(level="INFO", logger=self.log)
+        self.log.setLevel(logging.NOTSET)
+        coloredlogs.install(level="NOTSET", logger=self.log)
 
 
     @staticmethod

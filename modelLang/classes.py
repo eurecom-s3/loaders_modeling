@@ -3,9 +3,7 @@ import coloredlogs
 from enum import Enum, unique, auto
 
 log = logging.getLogger(__name__)
-log.setLevel(logging.DEBUG)
-coloredlogs.install(level="INFO", logger=log)
-
+coloredlogs.install(level="NOTSET", logger=log)
 
 @unique
 class Optimizations(Enum):

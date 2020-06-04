@@ -95,8 +95,8 @@ class PythonBackend(DefaultBackend):
                        'OVFLADD'     : self.OVFLADD
         }
         self.log = logging.getLogger(__name__)
-        self.log.setLevel(logging.DEBUG)
-        coloredlogs.install(level="INFO", logger=self.log)
+        self.log.setLevel(logging.NOTSET)
+        coloredlogs.install(level="NOTSET", logger=self.log)
 
 
     @staticmethod

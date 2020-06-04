@@ -8,8 +8,7 @@ from enum import Enum, auto
 import coloredlogs
 
 log = logging.getLogger(__name__)
-log.setLevel(10)
-coloredlogs.install(level="INFO", logger=log)
+coloredlogs.install(level="NOTSET", logger=log)
 
 import ply.yacc as yacc
 
