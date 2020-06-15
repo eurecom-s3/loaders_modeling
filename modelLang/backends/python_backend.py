@@ -7,7 +7,7 @@ from pwnlib.util.packing import pack, unpack
 
 from .default_backend import DefaultBackend, VerificationError
 from ..classes import (Base, Immediate, Variable, Expression, Input,
-                     Assignment, Condition, Loop)
+                       Assignment, Condition, Loop, VLoop)
 
 def extend(value, n, signed):
     if not signed:
@@ -376,10 +376,34 @@ class PythonBackend(DefaultBackend):
                     s.add_prefix(conditionpref)
                 self._exec_statement(s)
 
+    def _exec_vloop(self, stmt):
+        name = f"L{stmt._loop_name}"
+        varname = Variable(stmt.output_name)
+        start = stmt.start
+        nextname = stmt.nextname
+        contcondition = stmt.contcondition
+        if not all((self._eval_condition(x) for x in stmt._conditions)):
+            return
+        first_assignment = Assignment(varname, start)
+        self._exec_assignment(first_assignment)
+        initial_condition = Condition(True, False, name=contcondition)
+        self._exec_condition(initial_condition)
+        i = 0
+        while self.conditions[contcondition]:
+            for s in stmt._statements:
+                print(s)
+                try:
+                    self._exec_statement(s)
+                except:
+                    print(self.variables[stmt.output_name])
+            next_assignment = Assignment(varname, nextname)
+
     _exec_table = {Input: _exec_input,
                    Assignment: _exec_assignment,
                    Condition: _exec_condition,
-                   Loop: _exec_loop}
+                   Loop: _exec_loop,
+                   VLoop: _exec_vloop
+    }
 
     def verify(self, test, variable="HEADER"):
         if not self._statements:
