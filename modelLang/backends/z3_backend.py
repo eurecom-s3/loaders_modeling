@@ -271,9 +271,10 @@ class Z3Backend(DefaultBackend):
         return z3.And(*[self._eval_condition(x) for x in conditions])
 
     def _exec_condition(self, stmt):
-        self.conditions[stmt.name] = self._eval_condition(stmt)
+        condname = f"{self.name}_{stmt.name}"
+        self.conditions[condname] = self._eval_condition(stmt)
         if stmt.isterminal:
-            self.terminal_conditions[f"{self.name}_{stmt.name}"] = self.conditions[stmt.name]
+            self.terminal_conditions[condname] = self.conditions[condname]
 
     @staticmethod
     def _build_loop_unrool_condition(loop):
@@ -325,11 +326,11 @@ class Z3Backend(DefaultBackend):
         maxunroll = stmt.maxunroll
         conditions = stmt._conditions
 
-        if condname in self.conditions:
-            cond = self.conditions[condname]
+        if self.prefix(condname) in self.conditions:
+            cond = self.conditions[self.prefix(condname)]
         else:
             cond = Condition(True, isterminal=False, name=condname)
-            self.conditions[condname] = cond
+            self._exec_condition(cond)
 
         # Assign the first value
         initial_assignement = Assignment(ovar, start, [*conditions])
@@ -360,6 +361,8 @@ class Z3Backend(DefaultBackend):
             nextassignment = Assignment(ovar, Expression("VAR", nextvar),
                                         conditions=[*conditions, cond])
             self._exec_assignment(nextassignment)
+        # delete the first conditions, since we don't need it
+        del self.conditions[self.prefix(condname)]
 
     def _exec_optimization(self, stmt):
         strategy = stmt.strategy
@@ -502,3 +505,6 @@ class Z3Backend(DefaultBackend):
             conditions.append(ncond)
         ret.terminal_conditions['negated'] = z3.Or(conditions)
         return ret
+
+    def prefix(self, conditionname):
+        return f"{self.name}_{conditionname}"
