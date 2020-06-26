@@ -373,6 +373,9 @@ class Parser:
         nextname = Variable(t[9])
         condition = t[11]
         maxunroll = t[13]
+        if self._type in (self.ParserType.DIFFERENTIAL_ASSERT,
+                          self.ParserType.DIFFERENTIAL_NEGATE):
+            maxunroll = 1
         loop = VLoop(loopindex, newvar, start, nextname, condition, maxunroll, conditions=conditionlist)
         p[0] = (loopindex, loop)
 
