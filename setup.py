@@ -20,3 +20,12 @@ setup(
     maintainer='Dario Nisi',
     maintainer_email='dario.nisi@eurecom.fr'
 )
+
+setup(
+    name='tooleval',
+    version='0.1',
+    packages=['tooleval',
+              ],
+    maintainer='Dario Nisi',
+    maintainer_email='dario.nisi@eurecom.fr'
+)

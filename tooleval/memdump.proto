@@ -1,0 +1,17 @@
+syntax = "proto2";
+
+option java_package = "ghidra.program.flatapi";
+
+message MemoryRegion {
+  required uint32 vaddr = 1;
+  required uint32 vsize = 2;
+  required bytes content = 3;
+  optional string name = 4;
+  optional string permission = 5;
+  optional uint32 faddr = 6;
+  optional uint32 fsize = 7;
+}
+
+message MemoryDump {
+  repeated MemoryRegion regions = 1;
+}

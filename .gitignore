@@ -37,3 +37,8 @@ calclex.py
 example.py
 test
 testcase
+Memdump.java
+memdump_pb2.py
+memdump.pb.h
+memdump.pb.cc
+ghidra/
