@@ -48,7 +48,7 @@ if __name__ == "__main__":
     args = argparser.parse_args()
     asserts = reduce(lambda x,y: x | {*y}, args.asserts, set())
     negates = reduce(lambda x,y: x | {*y}, args.negates, set())
-    outfile = args.out
+    outfile = args.out[0]
     voi = args.var
     size = args.size
     defs = dict(args.define) if args.define else {}
@@ -79,3 +79,6 @@ if __name__ == "__main__":
     if model:
         testcase = backend.generate_testcase()
         write_testcase(testcase, outfile)
+
+    pef = pefile.PE(outfile)
+    print(pef)
