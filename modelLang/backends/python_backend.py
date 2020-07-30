@@ -92,6 +92,7 @@ class PythonBackend(DefaultBackend):
                        'SHL'         : self.SHL,
                        'ALIGNUP'     : self.ALIGNUP,
                        'ALIGNDOWN'   : self.ALIGNDOWN,
+                       'ISALIGNED'   : self.ISALIGNED,
                        'OVFLADD'     : self.OVFLADD
         }
         self.log = logging.getLogger(__name__)
@@ -169,6 +170,11 @@ class PythonBackend(DefaultBackend):
     @unsigned()
     def ISPOW2(a):
         return (a == 0) or (a & (a - 1)) == 0
+
+    @staticmethod
+    @unsigned()
+    def ISALIGNED(a, b):
+        return (a & (b -1)) == 0
 
     @staticmethod
     def And(a, b):
