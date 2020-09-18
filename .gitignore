@@ -42,3 +42,8 @@ memdump_pb2.py
 memdump.pb.h
 memdump.pb.cc
 ghidra/
+*.tex
+*.pdf
+*.log
+*.aux
+*#
