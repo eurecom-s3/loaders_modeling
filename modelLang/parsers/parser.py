@@ -477,7 +477,7 @@ class Parser:
             raise ValueError
         var = self.variables[p[1]]
         if var.type is None:
-            log.error(f"Variable {varname} is untyped. Cannot access sub-fields.")
+            log.error(f"Variable {varname} is untyped. Cannot access sub-field {p[3]}.")
             raise ValueError
         field = p[3]
         if field not in var.type.fields:
