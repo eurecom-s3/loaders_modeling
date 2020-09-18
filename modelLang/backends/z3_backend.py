@@ -172,9 +172,9 @@ class Z3Backend(DefaultBackend):
     def VAR(self, var):
         return self.variables[var.name]
 
-    z3_funcs_sized = {'ADD', 'SUB', 'MUL', 'UDIV', 'MOD', 'EQ', 'NEQ', 'GE', 'LE', 'GT', 'LT', 'ULE', 'UGE', 'UGT', 'ULT', 'BITOR', 'BITAND', 'ALIGNUP', 'ALIGNDOWN', 'ISALIGNED', 'OVFLWADD'}
+    z3_funcs_sized = {'ADD', 'SUB', 'MUL', 'UDIV', 'MOD', 'EQ', 'NEQ', 'GE', 'LE', 'GT', 'LT', 'ULE', 'UGE', 'UGT', 'ULT', 'BITOR', 'BITAND', 'ALIGNUP', 'ALIGNDOWN', 'ISALIGNED', 'OVFLWADD', 'SHR', 'SHL'}
     z3_funcs_bool  = {'OR', 'AND', 'NOT'}
-    z3_funcs_unsigned = {'ADD', 'SUB', 'BITOR', 'BITAND', 'ULE', 'ULT', 'UGT', 'UGE', 'EQ', 'NEQ', 'OVFLWADD'}
+    z3_funcs_unsigned = {'ADD', 'SUB', 'BITOR', 'BITAND', 'ULE', 'ULT', 'UGT', 'UGE', 'EQ', 'NEQ', 'OVFLWADD', 'SHR', 'SHL'}
 
     def dispatch_z3_1(self, func, arg):
         return self.z3_funcs[func](arg)
@@ -249,7 +249,7 @@ class Z3Backend(DefaultBackend):
             z3expr,
             self.variables[var.name])
 
-    def _exec_assignment(self, stmt):
+    def _exec_assignment(self, stmt, **kwargs):
         if stmt.conditional:
             return self._exec_conditional_assignment(stmt)
         else:
@@ -270,7 +270,7 @@ class Z3Backend(DefaultBackend):
     def _eval_condition_list(self, conditions):
         return z3.And(*[self._eval_condition(x) for x in conditions])
 
-    def _exec_condition(self, stmt):
+    def _exec_condition(self, stmt, **kwargs):
         condname = f"{self.name}_{stmt.name}"
         self.conditions[condname] = self._eval_condition(stmt)
         if stmt.isterminal:
@@ -287,8 +287,8 @@ class Z3Backend(DefaultBackend):
                               name=f"L{loop._loop_name}_unroll")
         return condition
 
-    def _exec_loop(self, stmt):
-        cond_prefix = f"L{stmt._loop_name}_"
+    def _exec_loop(self, stmt, prev_prefix=""):
+        cond_prefix = f"{prev_prefix}_L{stmt._loop_name}_"
         statements = stmt._statements
         ovar = Variable(stmt.output_name)
         ivar = stmt.input_var
@@ -314,10 +314,10 @@ class Z3Backend(DefaultBackend):
                     s.add_prefix(pref)
                 s._conditions.extend(conditions)
                 s._conditions.append(lcond)
-                self._exec_statement(s)
+                self._exec_statement(s, prev_prefix=pref)
 
-    def _exec_vloop(self, stmt):
-        cond_prefix = f"L{stmt._loop_name}_"
+    def _exec_vloop(self, stmt, prev_prefix=""):
+        cond_prefix = f"{prev_prefix}_L{stmt._loop_name}_"
         statements = stmt._statements
         ovar = Variable(stmt.output_name)
         start = stmt.start
@@ -354,7 +354,7 @@ class Z3Backend(DefaultBackend):
                     # change its name, adding the prefix
                     s.add_prefix(pref)
                 s._conditions.extend([*conditions, cond])
-                self._exec_statement(s)
+                self._exec_statement(s, prev_prefix=pref)
 
             cond = nextcond
             nextcond = None
