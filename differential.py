@@ -152,11 +152,13 @@ if __name__ == "__main__":
     current_constraints = ()
     z3_model_support = None
     iteration = 0
+    models = []
     while True:
         violated_constraints = set()
         model, testcase = generate(z3_models_assert, z3_models_negate,
                                    z3_model_support)
         if model:
+            models.append(model)
             #### Find violated constraints
             violated_constraints = find_violations(model, z3_models_negate)
             log.critical(f"Violated Constraints: {violated_constraints}")
