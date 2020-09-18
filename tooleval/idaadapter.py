@@ -2,8 +2,8 @@
 
 from tooleval import MemoryRegion, MemoryDump
 
-class GhidraAdapter(object):
-    uninbyte = 0x00
+class IDAAdapter(object):
+    uninbyte = 0x0
     def __init__(self, path):
         self._file = open(path, 'rb')
         self._memdump = None
@@ -22,6 +22,6 @@ class GhidraAdapter(object):
         return self._memdump
 
 if __name__ == "__main__":
-    adapter = GhidraAdapter("/tmp/ghidradumps/testcase_35")
+    adapter = IDAAdapter("/tmp/idadumps/testcase_35")
     dump = adapter.memdump
     print(dump)

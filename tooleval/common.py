@@ -1,15 +1,25 @@
 NOTDUMPED = "NOTDUMPED"
 NOTFOUND = "NOTFOUND"
+
+class FailedRelocExcetion(Exception):
+    pass
+
 def byteat(memdump, addr):
     for region in memdump.regions:
         if addr >= region.vaddr and addr < region.vaddr + region.vsize:
             if addr >= region.vaddr + len(region.content):
                 return NOTDUMPED
-            return region.content[region.vaddr - addr]
+            return region.content[addr - region.vaddr]
+    return NOTFOUND
+
+def permissionsat(memdump, addr):
+    for region in memdump.regions:
+        if addr >= region.vaddr and addr < region.vaddr + region.vsize:
+            return region.permission
     return NOTFOUND
 
 def coalesceregions(memdump):
-    lastaddr = 0
+    lastaddr = -1
     coalescedregions = []
     for region in memdump.regions:
         if region.vaddr != lastaddr:

@@ -2,9 +2,10 @@
 
 import r2pipe
 
-from tooleval import MemoryRegion, MemoryDump
+from tooleval import MemoryRegion, MemoryDump, FailedRelocExcetion
 
 class Radare2Adapter(object):
+    uninbyte = 0xff
     def __init__(self, path):
         self._instance = Radare2Adapter.createR2Instance(path)
         self._memdump = None
@@ -27,10 +28,13 @@ class Radare2Adapter(object):
             mregion = self._memdump.regions.add()
             mregion.name = region['name']
             mregion.fsize = region['size']
-            mregion.vsize = region['vsize']
+            try:
+                mregion.vsize = region['vsize']
+                mregion.vaddr = region['vaddr']
+            except:
+                raise FailedRelocExcetion
             mregion.permission = region['perm']
             mregion.faddr = region['paddr']
-            mregion.vaddr = region['vaddr']
             self._instance.cmd(f"s {hex(region['vaddr'])}")
             contentsize = mregion.vsize if mregion.vsize < 0x10000 else 0x10000
             content = bytes(self._instance.cmdj(f"pxj {hex(contentsize)}"))
