@@ -53,6 +53,9 @@ class Expression(Base):
                'ALIGNUP'    : 2,
                'ALIGNDOWN'  : 2,
                'ISALIGNED'  : 2,
+               'SECT'       : 1,
+               'NSECT'      : 1,
+               'OPTHDR'     : 1,
                'OVFLADD'    : 2,
                'INT'        : 2,
     }
@@ -330,6 +333,10 @@ class Optimization(Statement):
         self.strategy = strategy
         self.expression = expression
 
+class Debug(Statement):
+    def __init__(self, expr):
+        super(Debug, self).__init__()
+        self.expr = expr
 
 class ConditionListEntry(Base):
     def __init__(self, name, negated=False):

@@ -8,7 +8,7 @@ import z3
 from .default_backend import DefaultBackend
 from ..classes import (Base, Immediate, Variable, Expression, Input,
                        Assignment, Condition, Loop, VLoop, Optimization,
-                       Optimizations)
+                       Optimizations, Debug)
 
 class Z3Backend(DefaultBackend):
     print_unsat = True
@@ -48,7 +48,10 @@ class Z3Backend(DefaultBackend):
                           'ALIGNUP'   : self.ALIGNUP,
                           'ALIGNDOWN' : self.ALIGNDOWN,
                           'ISALIGNED' : self.ISALIGNED,
-                          'OVFLADD'  : self.OVFLWADD,
+                          'OVFLADD'   : self.OVFLWADD,
+                          'SECT'      : self.SECT,
+                          'NSECT'     : self.NSECT,
+                          'OPTHDR'    : self.OPTHDR,
                           'INT'       : self.INT,
                           'VAR'       : self.VAR,
                           'IMM'       : self.IMM
@@ -171,6 +174,23 @@ class Z3Backend(DefaultBackend):
 
     def VAR(self, var):
         return self.variables[var.name]
+
+    #### This opcode returns the offset of the section table
+    def SECT(self, header):
+        ntHdrOff = self.Slice(header, 0x3c, 4)
+        ntHdr = self.Slice(header, ntHdrOff, 24)
+        sizeOptHdr = self.Slice(ntHdr, 20, 2)
+        return z3.Sum(ntHdrOff, z3.ZeroExt(16, sizeOptHdr)) + 24
+
+    ### Default way to get the number of section from an header
+    def NSECT(self, header):
+        ntHdrOff = self.Slice(header, 0x3c, 4)
+        ntHdr = self.Slice(header, ntHdrOff, 24)
+        return self.Slice(ntHdr, 6, 2)
+
+    def OPTHDR(self, header):
+        ntHdrOff = self.Slice(header, 0x3c, 4)
+        return self.Slice(header, ntHdrOff + 24, 224)
 
     z3_funcs_sized = {'ADD', 'SUB', 'MUL', 'UDIV', 'MOD', 'EQ', 'NEQ', 'GE', 'LE', 'GT', 'LT', 'ULE', 'UGE', 'UGT', 'ULT', 'BITOR', 'BITAND', 'ALIGNUP', 'ALIGNDOWN', 'ISALIGNED', 'OVFLWADD', 'SHR', 'SHL'}
     z3_funcs_bool  = {'OR', 'AND', 'NOT'}
@@ -375,12 +395,16 @@ class Z3Backend(DefaultBackend):
             log.error(f"Strategy {stmt.strategy} not implemented")
             raise NotImplementedError
 
+    def _exec_debug(self, stmt):
+        pass
+
     _exec_table = {Input: _exec_input,
                    Assignment: _exec_assignment,
                    Condition: _exec_condition,
                    Loop: _exec_loop,
                    VLoop: _exec_vloop,
-                   Optimization: _exec_optimization
+                   Optimization: _exec_optimization,
+                   Debug: _exec_debug
     }
 
     def generate_solver(self):

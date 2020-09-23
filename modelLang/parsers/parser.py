@@ -15,7 +15,7 @@ import ply.yacc as yacc
 # Get the token map from the lexer.  This is required.
 from .langlex import Lexer
 from ..utils import customdefdict
-from ..classes import Variable, Assignment, Expression, Condition, Immediate, BoolImmediate, ConditionList, ConditionListEntry, Loop, VLoop, Input, Define, Optimization, Optimizations
+from ..classes import Variable, Assignment, Expression, Condition, Immediate, BoolImmediate, ConditionList, ConditionListEntry, Loop, VLoop, Input, Define, Optimization, Optimizations, Debug
 
 def read_file(filename):
     with open(filename, "rb") as fp:
@@ -195,6 +195,21 @@ class Parser:
         opt = Optimization(strategy, expression)
         self.statements.append(opt)
         p[0] = opt
+
+    def p_statement_debug(self, p):
+        'statement : dbgstatement'
+        dbg = p[1]
+        if len(self._block_stack) == 0:
+            self.statements.append(dbg)
+        else:
+            block = self._block_stack.pop()
+            block.add_statement(dbg)
+            self._block_stack.append(block)
+        p[0] = p[1]
+
+    def p_dbgstatement(self, p):
+        'dbgstatement : DBG COLON expression'
+        p[0] = Debug(p[3])
 
     def p_define_stmt(self, p):
         'define_stmt : DEFINE VARIABLE expression'

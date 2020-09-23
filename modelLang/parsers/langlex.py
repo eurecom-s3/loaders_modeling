@@ -27,6 +27,7 @@ class Lexer:
         'LOOPEND',
         'LOOP',
         'VLOOP',
+        'DBG',
         'COMMA',
         'COLON',
         'SEMICOLON',
@@ -65,7 +66,7 @@ class Lexer:
     )
 
     def t_OPERATOR1(self, t):
-        r'(NOT|Not|BITNOT|BITNot|BitNot|ISPOW2|IsPow2|isPow2)'
+        r'(NOT|Not|BITNOT|BITNot|BitNot|ISPOW2|IsPow2|isPow2|Setc|SECT|NSect|NSECT|OptHdr|OPTHDR)'
         t.value = t.value.upper()
         log.debug("OPERATOR1 token")
         return t
@@ -136,6 +137,12 @@ class Lexer:
         v = t.value.lstrip()
         v = int(v[1:])
         t.value = v
+        return t
+
+    def t_DBG(self, t):
+        r'(D|d)(?=(:|\())'
+        log.debug("Debug token")
+        t.value = t.value.lstrip()
         return t
 
     def t_LOOPEND(self, t):

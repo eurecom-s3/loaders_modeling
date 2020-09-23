@@ -7,7 +7,7 @@ from pwnlib.util.packing import pack, unpack
 
 from .default_backend import DefaultBackend, VerificationError
 from ..classes import (Base, Immediate, Variable, Expression, Input,
-                       Assignment, Condition, Loop, VLoop)
+                       Assignment, Condition, Loop, VLoop, Debug)
 
 def extend(value, n, signed):
     if not signed:
@@ -96,8 +96,8 @@ class PythonBackend(DefaultBackend):
                        'OVFLADD'     : self.OVFLADD
         }
         self.log = logging.getLogger(__name__)
-        self.log.setLevel(logging.NOTSET)
-        coloredlogs.install(level="NOTSET", logger=self.log)
+        self.log.setLevel(logging.CRITICAL)
+        coloredlogs.install(level="CRITICAL", logger=self.log)
 
 
     @staticmethod
@@ -331,8 +331,8 @@ class PythonBackend(DefaultBackend):
         else:
             return self._exec_unconditional_assignment(stmt)
 
-    def _eval_condition(self, condition):
-        if condition.name and condition.name in self.conditions:
+    def _eval_condition(self, condition, overwrite=False):
+        if not overwrite and condition.name and condition.name in self.conditions:
             return self.conditions[condition.name]
         expr = lambda: self._eval_expression(condition.expr)
         conds = all(self._eval_condition(x)
@@ -348,7 +348,7 @@ class PythonBackend(DefaultBackend):
         name = stmt.name
         if name is None:
             self.log.warning("Executing unnamed condition... Not sure this is intended.")
-        res = self._eval_condition(stmt)
+        res = self._eval_condition(stmt, overwrite=True)
         self.conditions[name] = res
 
         if not res and stmt.isterminal:
@@ -396,19 +396,23 @@ class PythonBackend(DefaultBackend):
         self._exec_condition(initial_condition)
         i = 0
         while self.conditions[contcondition]:
+            i += 1
             for s in stmt._statements:
-                print(s)
-                try:
-                    self._exec_statement(s)
-                except:
-                    print(self.variables[stmt.output_name])
-            next_assignment = Assignment(varname, nextname)
+                # try:
+                self._exec_statement(s)
+                # except Exception as e:
+                #     print(self.variables[stmt.output_name])
+            next_assignment = Assignment(varname, Expression("VAR", nextname))
+
+    def _exec_debug(self, stmt):
+        self.log.critical(self._eval_expression(stmt.expr))
 
     _exec_table = {Input: _exec_input,
                    Assignment: _exec_assignment,
                    Condition: _exec_condition,
                    Loop: _exec_loop,
-                   VLoop: _exec_vloop
+                   VLoop: _exec_vloop,
+                   Debug: _exec_debug
     }
 
     def verify(self, test, variable="HEADER"):
