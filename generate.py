@@ -46,8 +46,8 @@ if __name__ == "__main__":
                            help="Overwrite constant definition")
 
     args = argparser.parse_args()
-    asserts = reduce(lambda x,y: x | {*y}, args.asserts, set())
-    negates = reduce(lambda x,y: x | {*y}, args.negates, set())
+    asserts = reduce(lambda x,y: x + [*y], args.asserts, list())
+    negates = reduce(lambda x,y: x + [*y], args.negates, list())
     outfile = args.out[0]
     voi = args.var
     size = args.size
