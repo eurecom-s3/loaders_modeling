@@ -25,7 +25,7 @@ def sized(skipargs=(), skipret=False, sign=False):
             if not skipret: # pack output
                 lendiff = len(ret) - max_size
                 if lendiff >= 0: # if output is longer than input, cut it
-                    return ret[lendiff:]
+                    return ret[:max_size]
                 else: # if smaller, extend it (trail, depends on signness)
                     return extend(ret, -lendiff, sign)
             else:
@@ -149,13 +149,13 @@ class PythonBackend(DefaultBackend):
         return a != b
 
     @staticmethod
-    @sized()
+    @sized(sign=False)
     @unsigned()
     def BITOR(a, b):
         return a | b
 
     @staticmethod
-    @sized()
+    @sized(sign=False)
     @unsigned()
     def BITAND(a, b):
         return a & b
@@ -356,6 +356,8 @@ class PythonBackend(DefaultBackend):
             raise VerificationError(name)
 
     def _exec_loop(self, stmt):
+        if not all(self._eval_condition(x) for x in stmt._conditions):
+            return
         name = f"L{stmt._loop_name}"
         varname = Variable(stmt.output_name)
         inputvar = stmt.input_var
@@ -383,6 +385,8 @@ class PythonBackend(DefaultBackend):
                 self._exec_statement(s)
 
     def _exec_vloop(self, stmt):
+        if not all(self._eval_condition(x) for x in stmt._conditions):
+            return
         name = f"L{stmt._loop_name}"
         varname = Variable(stmt.output_name)
         start = stmt.start
@@ -405,7 +409,7 @@ class PythonBackend(DefaultBackend):
             next_assignment = Assignment(varname, Expression("VAR", nextname))
 
     def _exec_debug(self, stmt):
-        self.log.critical(self._eval_expression(stmt.expr))
+        self.log.critical(hex(unpack(self._eval_expression(stmt.expr), 'all')))
 
     _exec_table = {Input: _exec_input,
                    Assignment: _exec_assignment,
