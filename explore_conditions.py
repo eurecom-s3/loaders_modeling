@@ -10,8 +10,12 @@ import coloredlogs
 import z3
 import pefile
 
+import progressbar
+
 log = logging.getLogger(__name__)
-coloredlogs.install(level="INFO", logger=log)
+coloredlogs.install(level="CRITICAL", logger=log)
+alllog = logging.getLogger("")
+alllog.setLevel(logging.CRITICAL)
 
 from modelLang import Parser, Z3Backend
 
@@ -122,7 +126,8 @@ if __name__ == "__main__":
 
     n = 0
     blacklist = []
-    for tfs in alltf:
+    for tfs in progressbar.progressbar(alltf, max_value=2**nconds):
+        progressbar.streams.flush()
         # cs = [((name, z3cond), bool), ... ]
         cs = list(zip(nterminal_conds, tfs))
         if isblacklisted(cs, blacklist):
