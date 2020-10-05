@@ -18,8 +18,16 @@ if __name__ == "__main__":
     argpar.add_argument('executable', type=str, help='File to verify')
     argpar.add_argument('--logLevel', '-l', type=str, default=None,
                         help="Log verbosity")
+    argpar.add_argument('--disable-log', '-D', default=False,
+                        action='store_true', help="Disable logging")
+    argpar.add_argument('--z3-backend', '-Z', default=False,
+                        action="store_true", help="Enable z3 backend")
 
     args = argpar.parse_args()
+    engine = PythonBackend
+    if args.z3_backend:
+        engine = Z3Backend
+
     modelfile = args.model
     executable = args.executable
     if args.logLevel:
@@ -31,7 +39,9 @@ if __name__ == "__main__":
     parser = Parser(ptype=Parser.ParserType.VALIDATOR,
                     custom_defs={"FILESIZE" : filesize})
     parser.parse_file(modelfile)
-    backend = PythonBackend()
+    backend = engine()
+    if args.disable_log:
+        backend.log.setLevel(100)
     backend.load_statements(parser.statements)
     if backend.verify(content):
         log.info("PASS")
