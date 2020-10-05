@@ -128,6 +128,16 @@ class Input(Statement):
         s = f"<Input {self.var} {self.size} bytes>"
         return s
 
+class Output(Statement):
+    def __init__(self, var, size):
+        super(Output, self).__init__()
+        self.var = var
+        self.size = size
+
+    def __repr__(self):
+        s = f"<Output {self.var} {self.size} bytes>"
+        return s
+
 class Assignment(Statement):
     def __init__(self, left, right, conditions=None):
         super(Assignment, self).__init__()

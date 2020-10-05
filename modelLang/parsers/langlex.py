@@ -55,6 +55,7 @@ class Lexer:
         'BOOL',
         'VARIABLE',
         'INPUT',
+        'OUTPUT',
 
         'LOADTYPES',
         'TYPE',
@@ -123,6 +124,11 @@ class Lexer:
     def t_INPUT(self, t):
         r'^(INPUT|input)'
         log.debug("Input variable token")
+        return t
+
+    def t_OUTPUT(self, t):
+        r'^(OUTPUT|output)'
+        log.debug("Output variable token")
         return t
 
     def t_ASSIGNSTART(self, t):

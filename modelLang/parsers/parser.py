@@ -15,7 +15,7 @@ import ply.yacc as yacc
 # Get the token map from the lexer.  This is required.
 from .langlex import Lexer
 from ..utils import customdefdict
-from ..classes import Variable, Assignment, Expression, Condition, Immediate, BoolImmediate, ConditionList, ConditionListEntry, Loop, VLoop, Input, Define, Optimization, Optimizations, Debug
+from ..classes import Variable, Assignment, Expression, Condition, Immediate, BoolImmediate, ConditionList, ConditionListEntry, Loop, VLoop, Input, Output, Define, Optimization, Optimizations, Debug
 
 def read_file(filename):
     with open(filename, "rb") as fp:
@@ -155,6 +155,15 @@ class Parser:
         self.variables[p[1][0].name] = p[1][0]
         p[0] = stmt
 
+    def p_statement_output(self, p):
+        'statement : output_stmt'
+        log.debug("Output " + str(p[1]))
+        size = p[1][1]
+        stmt = Output(p[1][0], size)
+        self.statements.append(stmt)
+        self.variables[p[1][0].name] = p[1][0]
+        p[0] = stmt
+
     def p_statement_loopstart(self, p):
         'statement : loopstart_stmt'
         log.debug("Loop start " + str(p[1]))
@@ -246,6 +255,23 @@ class Parser:
         'input_stmt : INPUT VARIABLE constant'
         log.debug("Input statement")
         var = (Variable(p[2]), p[3])
+        p[0] = var
+
+    def p_output_stmt(self, p):
+        'output_stmt : OUTPUT VARIABLE constant'
+        log.debug("Output statement")
+        var = (Variable(p[2]), p[3])
+        p[0] = var
+
+    def p_output_stmt_type(self, p):
+        'output_stmt : OUTPUT VARIABLE constant TYPE VARIABLE'
+        log.debug("Output statement")
+        t = p[5]
+        if t not in self.loaded_types:
+            log.warning(f"Unknown type {t}. Defaulting to untyped variable")
+            var = (Variable(p[2]), p[3])
+        else:
+            var = (Variable(p[2], self.loaded_types[t]), p[3])
         p[0] = var
 
     def p_constant_number(self, p):

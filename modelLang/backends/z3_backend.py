@@ -6,7 +6,7 @@ from collections import deque
 import z3
 
 from .default_backend import DefaultBackend
-from ..classes import (Base, Immediate, Variable, Expression, Input,
+from ..classes import (Base, Immediate, Variable, Expression, Input, Output,
                        Assignment, Condition, Loop, VLoop, Optimization,
                        Optimizations, Debug)
 
@@ -194,7 +194,7 @@ class Z3Backend(DefaultBackend):
 
     z3_funcs_sized = {'ADD', 'SUB', 'MUL', 'UDIV', 'MOD', 'EQ', 'NEQ', 'GE', 'LE', 'GT', 'LT', 'ULE', 'UGE', 'UGT', 'ULT', 'BITOR', 'BITAND', 'ALIGNUP', 'ALIGNDOWN', 'ISALIGNED', 'OVFLWADD', 'SHR', 'SHL'}
     z3_funcs_bool  = {'OR', 'AND', 'NOT'}
-    z3_funcs_unsigned = {'ADD', 'SUB', 'BITOR', 'BITAND', 'ULE', 'ULT', 'UGT', 'UGE', 'EQ', 'NEQ', 'OVFLWADD', 'SHR', 'SHL'}
+    z3_funcs_unsigned = {'ADD', 'SUB', 'BITOR', 'BITAND', 'ULE', 'ULT', 'UGT', 'UGE', 'EQ', 'NEQ', 'OVFLWADD', 'SHR', 'SHL', 'ALIGNUP', 'ALIGNDOWN', 'ISALIGNED'}
 
     def dispatch_z3_1(self, func, arg):
         return self.z3_funcs[func](arg)
@@ -245,6 +245,12 @@ class Z3Backend(DefaultBackend):
         variable = stmt.var
         self.log.debug(f"Creating variable {variable} of size {stmt.size}")
         symb = z3.BitVec(variable.name, stmt.size * 8)
+        self.variables[variable.name] = symb
+
+    def _exec_output(self, stmt):
+        variable = stmt.var
+        self.log.debug(f"Creating output {variable} of size {stmt.size}")
+        symb = z3.BitVec(f"{self.name}_{variable.name}", stmt.size * 8)
         self.variables[variable.name] = symb
 
     def _exec_unconditional_assignment(self, stmt):
@@ -399,6 +405,7 @@ class Z3Backend(DefaultBackend):
         pass
 
     _exec_table = {Input: _exec_input,
+                   Output: _exec_output,
                    Assignment: _exec_assignment,
                    Condition: _exec_condition,
                    Loop: _exec_loop,
@@ -532,3 +539,6 @@ class Z3Backend(DefaultBackend):
 
     def prefix(self, conditionname):
         return f"{self.name}_{conditionname}"
+
+    def add_inequality(self, var1, var2):
+        self.terminal_conditions['ineq'] = var1 != var2
