@@ -98,6 +98,7 @@ class PythonBackend(DefaultBackend):
         self.log = logging.getLogger(__name__)
         self.log.setLevel(logging.CRITICAL)
         coloredlogs.install(level="CRITICAL", logger=self.log)
+        self._last_fail = None
 
 
     @staticmethod
@@ -420,6 +421,7 @@ class PythonBackend(DefaultBackend):
     }
 
     def verify(self, test, variable="HEADER"):
+        self._last_fail = None
         if not self._statements:
             self.log.error("Load statements before call verify()")
             raise ValueError
@@ -429,6 +431,7 @@ class PythonBackend(DefaultBackend):
             try:
                 self._exec_statement(stmt)
             except VerificationError as e:
+                self._last_fail = e.name
                 self.log.error(f"Condition {e.name} not satisfied. "
                           "Verification failed.")
                 return False
