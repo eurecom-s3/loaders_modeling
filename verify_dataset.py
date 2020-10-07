@@ -40,6 +40,8 @@ if __name__ == "__main__":
     argpar.add_argument('model', type=str, help='Loader model')
     argpar.add_argument('directory', type=str,
                         help='Path to dataset to verify')
+    argpar.add_argument('output', type=str,
+                        help='Path to output')
     argpar.add_argument('--logLevel', '-l', type=str, default=None,
                         help="Log verbosity")
     argpar.add_argument('--disable-log', '-D', default=False,
@@ -69,3 +71,12 @@ if __name__ == "__main__":
                                                                    modelfile),
                                                            samples),
                                                  max_value=len(samples))}
+    pool.close()
+    pool.terminate()
+    success = sum(1 for x in results.values() if not x)
+    with open(args.output, "w") as fp:
+        fp.write(f"Success: {success}\n")
+        for n, c in results.items():
+            if not c:
+                continue
+            fp.write(f"{n} {c}\n")
