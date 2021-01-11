@@ -22,7 +22,7 @@ Symbolic names given to expressions.
 Recursive structures that combine variables, immediate values and other expressions by means of operators.
 ### Operators Semantics and Arity
 | Operator | Arity | Signed | Sized | Meaning | Syntax |
-|:--------:|:-----:|:------:|:-----:|:--------------------------------------:|:--------------------:|
+|:--------:|:-----:|:------:|:-----:|:---------------------------------------------:|:--------------------:|
 | ADD | 2 | Y | Y | Integer addition |  |
 | SUB | 2 | Y | Y | Integer difference |  |
 | MUL | 2 | Y | Y | Integer product |  |
@@ -40,10 +40,17 @@ Recursive structures that combine variables, immediate values and other expressi
 | GT/GE | 2 | Y | Y | Integer greater [or equal] comparison |  |
 | LT/LE | 2 | Y | Y | Integer less [or equal] comparison |  |
 | UGT/UGE | 2 | N | Y | Unsigned greater [or equal] comparison |  |
-| ULT/ULE | 2 | Y | Y | Unsigned less [or equal] comparison |  |
+| ULT/ULE | 2 | N | Y | Unsigned less [or equal] comparison |  |
 | ISPOW2 | 1 | N | N | True if &lt;arg&gt; is a power of 2 |  |
+| SHL/SHR | 2 | N | Y | Left/Right logic bit-shift | |
+| OVFLADD | 2 | - | Y | True if the sum of the two operands produce an overflow | |
 | Indexing | 2 | N | Y | Single byte extraction | &lt;var&gt;[byteindex] |
 | Slice | 3 | N | Y | Bytevector extraction | &lt;var&gt;[start, nbytes] |
+
+### Syntactic Sugars
+|Expression | Meaning | Use case |
+|:---------------:|:---------------------------------------:|----------------------------------------------------|
+|STRCMP V1 I 'ME' | AND (EQ V1[I] "M") (EQ V1[ADD I 1] "E") | Comparison/Constraints involving printable strings |
 
 ## Valid Statements
 ### INPUT Statements
