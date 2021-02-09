@@ -37,7 +37,7 @@ typedef struct elf32_hdr{
   Elf32_Half	e_type;
   Elf32_Half	e_machine;
   Elf32_Word	e_version;
-  Elf32_Addr	e_entry;  /* Entry point */
+  Elf32_Addr	e_entry;
   Elf32_Off	e_phoff;
   Elf32_Off	e_shoff;
   Elf32_Word	e_flags;
@@ -142,3 +142,6 @@ typedef Elf32_Phdr Elf_Phdr;
 #define PT_GNU_EH_FRAME		0x6474e550
 
 #define PT_GNU_STACK	(PT_LOOS + 0x474e551)
+
+#define EI_OSABI	7
+#define ELFOSABI_ARM_FDPIC  65

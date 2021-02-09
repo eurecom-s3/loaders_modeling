@@ -100,7 +100,7 @@ class Parser:
         module_name = ('modelLang.structures.'
                        + (os if os != "DEFAULT" else "cparser"))
         module = __import__(module_name, globals(), locals(), ['parse_file'])
-        dirpath = self._cwd if use_cwd else "structures/headers"
+        dirpath = self._cwd if use_cwd else "modelLang/structures/headers"
         header_file = dirpath + f"/{header}.h"
         with open(header_file, "r") as fp:
             fcontent = fp.read()
