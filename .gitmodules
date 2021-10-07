@@ -1,3 +1,3 @@
 [submodule "models"]
 	path = models
-	url = git@gitlab.eurecom.fr:loaders-modeling/models.git
+	url = git@github.com:eurecom-s3/loaders-models.git

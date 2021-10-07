@@ -62,7 +62,6 @@ six==1.15.0
 sortedcontainers==2.1.0
 tempdir==0.7.1
 toml==0.10.0
-tooleval==0.1
 tox==3.14.4
 traitlets==4.3.3
 unicorn==1.0.2rc1
