@@ -5,7 +5,7 @@ The objective of this project is to provide a framework for modeling and analyzi
 # What do I find in this repo?
 
 This project ships some ready-to-use models as well as the code of the analysis framework.  
-The models can be found in the dedicated [submodule](models), while the code of the interpreter for the custom language is in [modelLang](modelLang) directory.  
+The models can be found in the dedicated [submodule](https://github.com/eurecom-s3/loaders-models), while the code of the interpreter for the custom language is in [modelLang](modelLang) directory.  
 
 # Modeling Language
 
