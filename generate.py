@@ -23,32 +23,37 @@ if __name__ == "__main__":
     argparser = argparse.ArgumentParser(description="Interpret models and generate testcases")
     argparser.add_argument('--asserts', '-A', action="append",
                            metavar="model", type=str, nargs="+",
-                           help="Model to assert")
+                           default=[],
+                           help="List of models to assert")
     argparser.add_argument('--negates', '-N', action="append",
                            metavar="model", type=str, nargs="*",
                            default=[],
-                           help="Model to negate")
+                           help="List of models to negate")
     argparser.add_argument('--out', '-O', action="store",
                            metavar="outfile", type=str, nargs=1,
                            default="testcase",
-                           help="Output file for testcase")
+                           help="Output file for testcase (default = 'testcase')")
     argparser.add_argument('--var', '-V', action="store",
                            metavar="variable", type=str, nargs=1,
                            default="HEADER",
-                           help="Variable in the model to use for the testcase")
-    argparser.add_argument('--size', '-B', action="store", metavar="bytes",
-                          type=int, default=None,
-                          help="Size in bytes of the testcase to generate")
+                           help="Name of the variable in the model representing the entire file (default 'HEADER')")
     argparser.add_argument('--define', '-D', action="store", metavar="define",
                            type=lambda x: (x.split(":")[0],
                                            int(x.split(":")[1])),
                            nargs="*",
-                           help="Overwrite constant definition")
+                           help="List of constants in the model to overwrite. Syntax <constant name>:<new value>. E.g., FILESIZE:1024")
+    argparser.add_argument('--size', '-B', action="store", metavar="bytes",
+                          type=int, default=None,
+                          help="Size in bytes of the testcase to generate")
 
     args = argparser.parse_args()
+    if len(args.asserts) == 0:
+        argparser.print_help()
+        sys.exit(0)
+
     asserts = reduce(lambda x,y: x + [*y], args.asserts, list())
     negates = reduce(lambda x,y: x + [*y], args.negates, list())
-    outfile = args.out[0]
+    outfile = args.out
     voi = args.var
     size = args.size
     defs = dict(args.define) if args.define else {}
