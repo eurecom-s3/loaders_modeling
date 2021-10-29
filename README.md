@@ -23,7 +23,7 @@ P: NT_HEADER <- HEADER[HEADER.e_lfanew, sizeof _IMAGE_NT_HEADERS] as _IMAGE_NT_H
 V3: EQ NT_HEADER.Signature 0x4550  term
 
 ```
-For more information about the modeling language, check out [SPECIFICATIONS.md](SPECIFICATIONS.md) and [EXAMPLE.md](EXAMPLE.md).  
+For more information about the modeling language, check out [SPECIFICATIONS.md](SPECIFICATIONS.md).  
 
 # Analysis Tasks & Examples
 
