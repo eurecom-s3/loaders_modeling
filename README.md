@@ -5,7 +5,7 @@ The objective of this project is to provide a framework for modeling and analyzi
 # What do I find in this repo?
 
 This project ships some ready-to-use models as well as the code of the analysis framework.  
-The models can be found in the dedicated [submodule](https://github.com/eurecom-s3/loaders-models), while the code of the interpreter for the custom language is in [modelLang](modelLang) directory.  
+The models can be found in the dedicated [submodule](https://github.com/eurecom-s3/loaders-models), while the interpreter's code for the custom language is in the [modelLang](modelLang) directory.  
 
 # Modeling Language
 
@@ -28,8 +28,8 @@ For more information about the modeling language, check out [SPECIFICATIONS.md](
 # Analysis Tasks & Examples
 
 ## Sample validation
-Given an executable and the model of a parser as input, the framework can determine whether the first respects the constraints of the second, in other words, whether the modeled software considers the input file as a valid executable.
-To check whether an executable respects the constraints of a model, you can run:  
+Given an executable and the model of a parser as input, the framework can determine whether the first meets the constraints of the second, in other words, whether the modeled software considers the input file as a valid executable.
+To check whether an executable meets the constraints of a model, you can run:  
 ```
 python3 verify.py <model file> <sample>
 ```
@@ -37,11 +37,11 @@ For example, if you want to check whether an unknown sample can run under Window
 ```
 python3 verify.py models/windows/10/MiCreateImageFile.lmod path/to/the/sample
 ```
-The script returns 0 if the executable is valid, or 1 otherwise (in this case, the scripts prints also one line pointing to the broken constraint in the model).
+The script returns 0 if the executable is valid, or 1 otherwise (in this case, the scripts also prints one line pointing to the broken constraint in the model).
 
 ## Sample generation
 The framework can create program headers that are valid according to one or more models.
-The logic for the generating valid samples is implemented in the `generate.py` script, which can be invoked as follows:
+The logic for generating valid samples is implemented in the `generate.py` script, which can be invoked as follows:
 ```
 python3 generate.py -A <model 1> [<model 2> [<model 3> ... ]]
 ```
@@ -52,12 +52,12 @@ python3 generate.py -A models/windows/7/MiCreateImageFile.lmod models/windows/7/
 The output file can be specified with the `-O` flag (default: `testcase`).
 
 ## Differential test case generation
-Given two or more models, the framework can create program headers that are valid according to a subset of them, but invalid for the others.
-`generate.py` implements also the differential test case generation, and can be invoked with:
+Given two or more models, the framework can create program headers that are valid according to a subset of them but invalid for the others.
+`generate.py` also implements the differential test case generation and can be invoked with:
 ```
 python3 generate.py -A <model 1> [<model 2> [...]] -N <model 3> [<model 3> [...]]
 ```
-To generate a sample that runs in Windows 7 but not in Windows 10, you can execute:  
+For example, to generate a sample that runs in Windows 7 but not in Windows 10, you can execute:  
 ```
 ./generate.py -A models/windows/10/MiCreateImageFileMap.lmod models/windows/10/LdrpInitializeProcess.lmod -N models/windows/7/MiCreateImageFileMap.lmod models/windows/7/LdrpInitializeProcess.lmod
 ```
@@ -80,19 +80,19 @@ The best way to start using this project is by creating a virtual environment.
 ```
 mkvirtualenv --python=python3 models
 ```
-This project uses python3-specific features and as such is unlikely to work with python2.  
+This project uses python3-specific features and, as such, is unlikely to work with python2.  
 Most of the project dependencies can be installed using pip:
 ```
 pip install -r requirements.txt
 ```
-The `z3` solver needs to be installed separatedly. On Ubuntu 20.04, you can do that with:
+The `z3` solver needs to be installed separately. On Ubuntu 20.04, you can do that with:
 ```
 sudo apt install z3
 ```
 
 # Publications and Conference Talks
 
-This work has been published at the [24th International Symposium on Research in Attacks, Intrusions and Defenses (RAID 2021)](https://raid2021.org/).  
+This work was published at the [24th International Symposium on Research in Attacks, Intrusions and Defenses (RAID 2021)](https://raid2021.org/).  
 You can read the paper [here](https://www.eurecom.fr/publication/6603/download/sec-publi-6603.pdf).  
 If you want to cite this work in your academic paper, you can use this:
 
