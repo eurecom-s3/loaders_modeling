@@ -1,6 +1,16 @@
 # What is this about?
 
-The objective of this project is to provide a framework for modeling and analyzing the behavior of parsers for executable file formats, like the ones we can find in operating system loaders and reverse engineering tools.  
+This project provides a framework for modeling and analyzing the behavior of parsers for executable file formats, like the ones we can find in operating system loaders and reverse engineering tools.  
+
+# Why? What's the goal of all this?
+
+The key problem we deal with: there is *no reference implementation* for parsing PE files, and there is *no comprehensive specifications* for the PE file format. Reimplementation is the de facto rule, and there is a lot of room for implementation differences. This, in turns, leads to *discrepancies* between software the actually needs to load PE executables (e.g., Windows OS) and reverse engineering / malware analysis tools. This a problem: these discrepancies can be used to mislead malware and reverse engineering tools.
+
+Key contributions:
+- We developed and release an *analysis framework* to *systematically* explore this problem and *enumerate* discrepancies among different software, especially OS loaders vs. reverse engineering / malware analysis tools.
+- We developed and release models for various versions of Windows (XP, 7, 10) and reverse engineering tools (ClamAV, Yara, radare2).
+- We can automatically *validate* and *generate* PE samples "exploiting" these discrepancies, thus tricking reverse engineering tools into extracting misleading information.
+
 
 # What do I find in this repo?
 
